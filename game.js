@@ -133,7 +133,7 @@ class BootScene extends Phaser.Scene {
 
       // Body
       g.fillStyle(def.color); g.fillCircle(cx, cy, s*0.72);
-      g.fillStyle(Phaser.Display.Color.IntegerToColor(def.color).lighten(15).color, 0.5);
+      g.fillStyle(0xffffff, 0.22);
       g.fillCircle(cx-4, cy-5, s*0.4);
 
       // Eyes
@@ -250,10 +250,18 @@ class BootScene extends Phaser.Scene {
     g.fillStyle(0xcc9900); g.fillCircle(12, 12, 5);
     g.generateTexture('coin', 26, 26); g.destroy();
 
-    // Star
+    // Star (5-pointed, drawn manually)
     const s = this.make.graphics({ add: false });
-    s.fillStyle(0xffd700); s.fillStar(16, 16, 5, 14, 6);
-    s.fillStyle(0xffffff, 0.4); s.fillStar(16, 16, 5, 8, 3);
+    const pts = [];
+    for (let i = 0; i < 10; i++) {
+      const r2 = i % 2 === 0 ? 14 : 6;
+      const a2 = (i / 10) * Math.PI * 2 - Math.PI / 2;
+      pts.push({ x: 16 + Math.cos(a2) * r2, y: 16 + Math.sin(a2) * r2 });
+    }
+    s.fillStyle(0xffd700); s.fillPoints(pts, true);
+    s.fillStyle(0xffffff, 0.35);
+    const pts2 = pts.map(p => ({ x: 16 + (p.x-16)*0.5, y: 16 + (p.y-16)*0.5 }));
+    s.fillPoints(pts2, true);
     s.generateTexture('star', 32, 32); s.destroy();
   }
 
