@@ -1,0 +1,16 @@
+{
+  "name": "Crossy Hop",
+  "short_name": "Crossy Hop",
+  "description": "Yüksek kaliteli Crossy Road tarzı mobil oyun",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1a3a1a",
+  "theme_color": "#1a3a1a",
+  "lang": "tr",
+  "categories": ["games"],
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}
