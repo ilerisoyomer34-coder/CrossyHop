@@ -9,12 +9,11 @@ taşıma zincirini optimize ederek Anadolu dağlarından Ay'a uzanan bir maden i
 
 ## Hemen oyna
 
-- **GitHub Pages:** https://ilerisoyomer34-coder.github.io/CrossyHop/cevher/play/ (`main` dalına
-  birleştirildikten sonra yayında olur)
+- **GitHub Pages:** https://ilerisoyomer34-coder.github.io/CrossyHop/
 - Hata ayıklama paneli ve bot için adresin sonuna `#debug` ekleyin.
 
-Bu sürüm `npm run build:pages` ile `play/` klasörüne derlenir; oyunu değiştirdikten sonra bu komutu
-çalıştırıp `play/` klasörünü de commit'leyin.
+Sitedeki sürüm `npm run build:pages` ile depo köküne (`index.html` + `assets/`) derlenir; oyunu
+değiştirdikten sonra bu komutu çalıştırıp kökteki dosyaları da commit'leyin.
 
 ## Hızlı başlangıç
 
