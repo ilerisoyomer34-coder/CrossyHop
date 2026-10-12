@@ -1,0 +1,60 @@
+{
+  "startingCash": 0,
+  "shaft": {
+    "baseProd": 2,
+    "prodGrowth": 6,
+    "baseCost": 8,
+    "costGrowthPerShaft": 7.5,
+    "costGrowthPerLevel": 1.12,
+    "unlockBase": 60,
+    "unlockGrowth": 9,
+    "milestoneEvery": 25,
+    "milestoneMult": 2,
+    "maxLevel": 400,
+    "minerThresholds": [1, 10, 25, 50, 100, 200, 300, 400],
+    "cycle": { "walkSec": 1.2, "digSec": 1.5, "digHits": 3, "dumpSec": 0.3 }
+  },
+  "elevator": {
+    "baseFlow": 6,
+    "baseCost": 25,
+    "costGrowthPerLevel": 1.07,
+    "milestoneEvery": 25,
+    "milestoneMult": 3,
+    "speedBonusEvery": 50,
+    "speedBonus": 0.1,
+    "tripBaseSec": 4,
+    "tripPerShaftSec": 0.6,
+    "referenceDepth": 10,
+    "unloadSec": 1.0,
+    "fullLoadSec": 1.0,
+    "maxLevel": 2000
+  },
+  "logistics": {
+    "baseFlow": 6,
+    "baseCost": 25,
+    "costGrowthPerLevel": 1.07,
+    "milestoneEvery": 25,
+    "milestoneMult": 3,
+    "maxLevel": 2000,
+    "carrierThresholds": [1, 10, 25, 50, 100, 250, 500, 1000],
+    "cycle": { "loadSec": 0.6, "walkSec": 1.8, "unloadSec": 0.5 },
+    "manualStaggerSec": 0.35
+  },
+  "barriers": [
+    { "afterShaft": 5, "durationSec": 60, "costFactor": 0 },
+    { "afterShaft": 10, "durationSec": 900, "costFactor": 0.25 },
+    { "afterShaft": 15, "durationSec": 3600, "costFactor": 0.25 },
+    { "afterShaft": 20, "durationSec": 14400, "costFactor": 0.25 },
+    { "afterShaft": 25, "durationSec": 28800, "costFactor": 0.25 }
+  ],
+  "offline": { "baseEfficiency": 0.5, "baseCapHours": 2 },
+  "prestige": {
+    "thresholdBase": 1e13,
+    "thresholdGrowth": 40,
+    "rankMult": 2,
+    "maxRank": 10,
+    "jpCoef": 4,
+    "jpDivisor": 1e12,
+    "jpExponent": 0.45
+  }
+}

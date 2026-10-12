@@ -1,0 +1,21 @@
+{
+  "button": { "pressScale": 0.95, "pressMs": 90 },
+  "holdToBuy": { "initialDelayMs": 400, "startRatePerSec": 5, "maxRatePerSec": 20, "rampMs": 2000 },
+  "cashTween": { "timeConstantMs": 160 },
+  "uiUpdateHz": 10,
+  "floatingText": { "maxActive": 20, "durationMs": 1100, "risePx": 46 },
+  "scroll": {
+    "dragThresholdPx": 8,
+    "decelerationPerSec": 3.2,
+    "minVelocityPxPerSec": 8,
+    "maxVelocityPxPerSec": 5000,
+    "rubberBand": 0.35,
+    "springBackPerSec": 12,
+    "maxOverscrollPx": 140,
+    "wheelMultiplier": 1,
+    "keyStepPx": 80,
+    "animateMs": 520
+  },
+  "milestoneFlashMs": 900,
+  "cameraShakePx": 3
+}

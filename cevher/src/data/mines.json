@@ -1,0 +1,16 @@
+{
+  "startMineId": "yesil-yamac-1",
+  "mines": [
+    {
+      "id": "yesil-yamac-1",
+      "regionId": "yesil-yamac",
+      "mineScale": 1,
+      "shaftCount": 10,
+      "oreBands": [
+        { "fromShaft": 1, "ore": "coal" },
+        { "fromShaft": 4, "ore": "copper" },
+        { "fromShaft": 7, "ore": "iron" }
+      ]
+    }
+  ]
+}

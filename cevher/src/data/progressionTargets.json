@@ -1,0 +1,14 @@
+{
+  "source": "GDD 5.5 — continuously active, efficiency-focused player without managers, skills, boosts or prestige; barrier wait times excluded",
+  "targets": [
+    { "shaft": 2, "seconds": 40, "income": 30 },
+    { "shaft": 5, "seconds": 180, "income": 8330 },
+    { "shaft": 8, "seconds": 600, "income": 2.2e6 },
+    { "shaft": 10, "seconds": 2400, "income": 1.24e8 },
+    { "shaft": 12, "seconds": 9000, "income": 4.6e9 },
+    { "shaft": 14, "seconds": 39600, "income": 1.84e11 },
+    { "shaft": 15, "seconds": 111600, "income": 2e12 },
+    { "shaft": 17, "seconds": 561600, "income": 8.7e13 }
+  ],
+  "tolerance": 0.3
+}

@@ -1,0 +1,19 @@
+{
+  "loop": {
+    "stepMs": 50,
+    "maxStepsPerFrame": 10,
+    "maxCatchUpMs": 6000,
+    "longHideMs": 5000,
+    "frameBudgetMs": 10
+  },
+  "debug": {
+    "timeScales": [1, 10, 100, 1000],
+    "fastForwardMinutes": [1, 10, 60],
+    "fastForwardStepMs": 250
+  },
+  "render": {
+    "maxResolution": 2,
+    "cullMarginPx": 160,
+    "antialiasBelowDpr": 2
+  }
+}
