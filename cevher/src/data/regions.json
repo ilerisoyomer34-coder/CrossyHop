@@ -1,0 +1,27 @@
+{
+  "regions": [
+    {
+      "id": "yesil-yamac",
+      "jpMult": 1,
+      "palette": {
+        "skyTop": "#7FA6BF",
+        "sky": "#A8C5D6",
+        "fog": "#EAF1F2",
+        "hillFar": "#9DB7A8",
+        "hillMid": "#7FA585",
+        "hillNear": "#5F8F5A",
+        "terrace": "#8DBA6A",
+        "grass": "#86A84A",
+        "soil": "#7A5A3C",
+        "wood": "#9C6B3F",
+        "woodDark": "#6E4527"
+      },
+      "depthGradient": ["#8C7A62", "#5E5A6E", "#3A3850"],
+      "ores": {
+        "coal": { "color": "#2E2C33", "glint": "#9A98A8" },
+        "copper": { "color": "#C2673A", "glint": "#F6C29A" },
+        "iron": { "color": "#8A6656", "glint": "#E2CBBB" }
+      }
+    }
+  ]
+}
