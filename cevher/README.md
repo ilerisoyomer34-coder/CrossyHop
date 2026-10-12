@@ -7,6 +7,15 @@ taşıma zincirini optimize ederek Anadolu dağlarından Ay'a uzanan bir maden i
 > **Durum: Faz 0 — Gri kutu prototip.** Tasarım dokümanı: [`docs/GDD.md`](docs/GDD.md) ·
 > Faz raporu: [`docs/reports/faz-0.md`](docs/reports/faz-0.md)
 
+## Hemen oyna
+
+- **GitHub Pages:** https://ilerisoyomer34-coder.github.io/CrossyHop/cevher/play/ (`main` dalına
+  birleştirildikten sonra yayında olur)
+- Hata ayıklama paneli ve bot için adresin sonuna `#debug` ekleyin.
+
+Bu sürüm `npm run build:pages` ile `play/` klasörüne derlenir; oyunu değiştirdikten sonra bu komutu
+çalıştırıp `play/` klasörünü de commit'leyin.
+
 ## Hızlı başlangıç
 
 Gerekenler: **Node.js 22.12+** (npm 10 veya 11).

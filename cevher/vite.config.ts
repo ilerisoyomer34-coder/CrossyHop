@@ -7,7 +7,9 @@ const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 
   version: string;
 };
 
-export default defineConfig({
+// `vite build --mode pages` writes a source-map-free build to play/, which GitHub Pages serves
+// (https://<user>.github.io/<repo>/cevher/play/). Regular builds go to dist/.
+export default defineConfig(({ mode }) => ({
   // Relative base so the production build works from any sub-path (PWA, static hosting).
   base: './',
   plugins: [preact()],
@@ -19,11 +21,13 @@ export default defineConfig({
   },
   build: {
     target: 'es2022',
-    sourcemap: true,
+    outDir: mode === 'pages' ? 'play' : 'dist',
+    emptyOutDir: true,
+    sourcemap: mode !== 'pages',
     chunkSizeWarningLimit: 1200,
   },
   test: {
     include: ['tests/**/*.test.ts'],
     environment: 'node',
   },
-});
+}));

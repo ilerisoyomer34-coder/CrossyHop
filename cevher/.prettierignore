@@ -1,4 +1,5 @@
 dist
+play
 node_modules
 package-lock.json
 test-results
