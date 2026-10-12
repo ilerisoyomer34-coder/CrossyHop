@@ -105,6 +105,8 @@ cevher/
 - **Yuvarlama:** nakit aşağı, maliyetler yukarı yuvarlanır (ekranda "yetiyor" görünüp alınamama olmaz).
 - **İngilizce çeviri** şimdiden eklendi (anahtar eşliği testle korunuyor); ayarlardan değiştirilebilir.
 - **MSAA** yalnızca DPR < 2 ekranlarda açık (yüksek DPR'de gereksiz, yazılım rasterde %65 hız kazancı).
+- **CSP-güvenli çizim:** Pixi `pixi.js/unsafe-eval` ile `eval`/`new Function` kullanmadan çalışır; üretim
+  derlemesi `script-src 'self'` gibi sıkı bir CSP altında test edildi (Capacitor ve gömülü görünümler için).
 
 ## 5. Çalıştırma ve test
 

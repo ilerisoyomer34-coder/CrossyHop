@@ -4,6 +4,9 @@
  * absolute phase times, which gives smooth 60 fps motion from a 20 Hz simulation.
  */
 import { Application, Container } from 'pixi.js';
+// CSP-safe shader/uniform code paths (no `new Function`): needed for strict Content-Security-Policy
+// hosts such as embedded web views, Capacitor builds and sandboxed previews.
+import 'pixi.js/unsafe-eval';
 import { Decimal, dmin } from '../core/BigNum';
 import type { GameState, MineState } from '../state/GameState';
 import { getMine } from '../state/update';

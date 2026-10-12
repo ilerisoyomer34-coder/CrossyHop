@@ -116,7 +116,7 @@
   "debug.autoRun": "Auto-run units (manager simulation)",
   "debug.bot": "Greedy bot (auto-play)",
   "debug.reset": "Reset game",
-  "debug.resetConfirm": "Delete all progress?",
+  "debug.resetConfirm": "Tap again to delete",
   "debug.perf": "Performance",
   "debug.fps": "FPS",
   "debug.frameMs": "Frame time",

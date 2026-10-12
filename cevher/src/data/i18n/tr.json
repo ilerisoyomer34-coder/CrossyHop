@@ -116,7 +116,7 @@
   "debug.autoRun": "Otomatik çalıştır (yönetici simülasyonu)",
   "debug.bot": "Açgözlü bot (otomatik oyna)",
   "debug.reset": "Oyunu sıfırla",
-  "debug.resetConfirm": "Tüm ilerleme silinsin mi?",
+  "debug.resetConfirm": "Silmek için tekrar dokun",
   "debug.perf": "Performans",
   "debug.fps": "FPS",
   "debug.frameMs": "Kare süresi",

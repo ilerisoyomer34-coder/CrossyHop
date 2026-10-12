@@ -2,6 +2,7 @@
  * Developer panel (GDD 13.9): only rendered in dev builds or with `?debug=1`.
  * Time scale, resources, world shortcuts, automation toggles, perf counters and raw flow values.
  */
+import { useState } from 'preact/hooks';
 import { D } from '../core/BigNum';
 import { engineConfig } from '../data/config';
 import { formatDuration } from '../i18n/formatNumber';
@@ -51,6 +52,7 @@ export function DebugPanel({ state }: { state: GameState }) {
   const flows = chainFlows(state, mineId, cfg);
   const perf = perfSignal.value;
   const autoRun = state.flags[FLAG_DEBUG_AUTORUN] === true;
+  const [confirmReset, setConfirmReset] = useState(false);
   if (!mine) return null;
 
   const setScale = (scale: number): void => {
@@ -198,13 +200,18 @@ export function DebugPanel({ state }: { state: GameState }) {
           type="button"
           class="chip chip--danger"
           onClick={() => {
-            if (window.confirm(t('debug.resetConfirm'))) {
-              game.replaceState(createInitialState(cfg, Date.now()));
-              runtime.camera.scrollTo(0, false);
+            // Two-tap confirmation inside the page (native confirm() is unavailable in sandboxes).
+            if (!confirmReset) {
+              setConfirmReset(true);
+              window.setTimeout(() => setConfirmReset(false), 3000);
+              return;
             }
+            setConfirmReset(false);
+            game.replaceState(createInitialState(cfg, Date.now()));
+            runtime.camera.scrollTo(0, false);
           }}
         >
-          {t('debug.reset')}
+          {confirmReset ? t('debug.resetConfirm') : t('debug.reset')}
         </button>
       </section>
 

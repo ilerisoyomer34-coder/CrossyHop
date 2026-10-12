@@ -51,7 +51,7 @@ miktarını değiştirir (×1 → ×10 → ×50 → MAKS → Dönüm); üst bara
 
 ## Hata ayıklama paneli
 
-Geliştirme modunda her zaman, üretim derlemesinde `?debug=1` ile açılır (sol alttaki böcek düğmesi):
+Geliştirme modunda her zaman, üretim derlemesinde `?debug=1` (veya `#debug`) ile açılır (sol alttaki böcek düğmesi):
 zaman hızı ×1/×10/×100/×1000, duraklat, ileri sar (1/10/60 dk), nakit/kristal/JP ekleme, tüm katları
 açma, engeli bitirme, **otomatik çalıştırma** (yönetici simülasyonu), **açgözlü bot**, oyunu sıfırlama,
 FPS / kare süresi / draw call / kare başına JS süresi, ham akış değerleri, ölçülen satış ve kat açılış

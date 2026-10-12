@@ -57,7 +57,9 @@ function watchMedia(query: string, apply: (matches: boolean) => void): void {
 
 function boot(): void {
   const params = new URLSearchParams(window.location.search);
-  const debugEnabled = import.meta.env.DEV || params.get('debug') === '1';
+  // `#debug` works where query strings are not forwarded (sandboxed previews / artifact hosts).
+  const debugEnabled =
+    import.meta.env.DEV || params.get('debug') === '1' || window.location.hash === '#debug';
   const cfg = defaultConfig;
   const loopCfg = engineConfig.loop;
 
