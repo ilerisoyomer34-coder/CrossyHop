@@ -13,7 +13,7 @@ import type { Decimal } from '../core/BigNum';
 import type { Locale } from '../i18n/t';
 import type { Notation } from '../i18n/formatNumber';
 
-export const STATE_VERSION = 1;
+export const STATE_VERSION = 2;
 
 export type UnitRef =
   { kind: 'shaft'; index: number } | { kind: 'elevator' } | { kind: 'logistics' };
@@ -124,9 +124,18 @@ export interface ContractState {
   rerollsUsed: number;
 }
 
+/**
+ * How the units run while the game is open: 'tap' — each cycle starts with a tap; 'auto' — every
+ * shaft, the elevator and the carriers loop on their own. Auto mode stops when the game is closed:
+ * only managers (Phase 1) keep working offline.
+ */
+export type PlayMode = 'tap' | 'auto';
+export const PLAY_MODES: readonly PlayMode[] = ['tap', 'auto'];
+
 export interface Settings {
   locale: Locale;
   notation: Notation;
+  playMode: PlayMode;
 }
 
 export interface LifetimeStats {

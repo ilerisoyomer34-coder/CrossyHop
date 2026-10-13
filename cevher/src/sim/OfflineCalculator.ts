@@ -5,15 +5,16 @@
  * - Income: only automated links work while away. Per mine:
  *   min(automated shaft flow, automated elevator flow, automated logistics flow)
  *   × permanent multipliers × offline efficiency × min(elapsed, offline cap).
- *   A link without automation makes the whole chain 0 (Phase 0 has no managers, so only the debug
- *   auto-run flag produces offline income).
+ *   A link without a manager makes the whole chain 0. The player's automatic play mode does not
+ *   count: it only runs while the game is open (Phase 0 has no managers, so only the debug manager
+ *   simulation produces offline income).
  * - Real-time timers (rock barrier blasts) keep running for the whole elapsed time, uncapped.
  * - Clock guard: when the device clock went backwards nothing is granted and the state is flagged.
  */
 import { type Decimal, dmin, ZERO } from '../core/BigNum';
 import { FLAG_CLOCK_REWOUND, type GameState, type MineState } from '../state/GameState';
 import { getMine } from '../state/update';
-import { isAutomated } from './automation';
+import { worksOffline } from './automation';
 import { mineDef, type GameConfig } from './GameConfig';
 import { incomeMultiplier } from './Multipliers';
 
@@ -42,20 +43,20 @@ export function offlineCapMs(_state: GameState, cfg: GameConfig): number {
   return cfg.econ.offline.baseCapHours * 3_600_000;
 }
 
-/** ₵/s the automated part of a mine's chain sells (before the offline efficiency). */
+/** ₵/s the offline-capable part of a mine's chain sells (before the offline efficiency). */
 export function automatedIncomePerSec(state: GameState, mineId: string, cfg: GameConfig): Decimal {
   const mine = getMine(state, mineId);
   const eco = cfg.economy;
   const scale = mineDef(cfg, mineId).mineScale;
   let shafts = ZERO;
   mine.shafts.forEach((shaft, i) => {
-    if (isAutomated(state, shaft))
+    if (worksOffline(state, shaft))
       shafts = shafts.add(eco.shaftProduction(i + 1, shaft.level, scale));
   });
-  const elevator = isAutomated(state, mine.elevator)
+  const elevator = worksOffline(state, mine.elevator)
     ? eco.elevatorRealFlow(mine.elevator.level, mine.shafts.length, scale)
     : ZERO;
-  const logistics = isAutomated(state, mine.logistics)
+  const logistics = worksOffline(state, mine.logistics)
     ? eco.logisticsFlow(mine.logistics.level, scale)
     : ZERO;
   return dmin(dmin(shafts, elevator), logistics).mul(incomeMultiplier(state, mineId, cfg).total);

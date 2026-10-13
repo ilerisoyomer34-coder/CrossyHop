@@ -10,19 +10,20 @@
 import { Decimal, toSaveString } from '../../core/BigNum';
 import { isLocale } from '../../i18n/t';
 import { idleCarrier } from '../factory';
-import type {
-  ActiveBarrier,
-  ActiveBoost,
-  CarrierPhaseKind,
-  CarrierState,
-  ContractState,
-  ElevatorPhaseKind,
-  ElevatorState,
-  GameState,
-  LogisticsState,
-  MineState,
-  OwnedManager,
-  ShaftState,
+import {
+  PLAY_MODES,
+  type ActiveBarrier,
+  type ActiveBoost,
+  type CarrierPhaseKind,
+  type CarrierState,
+  type ContractState,
+  type ElevatorPhaseKind,
+  type ElevatorState,
+  type GameState,
+  type LogisticsState,
+  type MineState,
+  type OwnedManager,
+  type ShaftState,
 } from '../GameState';
 import type { GameConfig } from '../../sim/GameConfig';
 import { SaveError } from './SaveError';
@@ -373,7 +374,11 @@ export function decodeState(data: unknown, cfg: GameConfig): GameState {
     boosts: r.list('boosts', decodeBoost),
     contracts: decodeContracts(r.obj('contracts')),
     mines,
-    settings: { locale, notation: settings.oneOf('notation', NOTATIONS) },
+    settings: {
+      locale,
+      notation: settings.oneOf('notation', NOTATIONS),
+      playMode: settings.oneOf('playMode', PLAY_MODES),
+    },
     stats: {
       totalEarned: stats.dec('totalEarned'),
       taps: stats.int('taps', 0),

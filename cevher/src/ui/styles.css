@@ -527,8 +527,7 @@ h3 {
   width: 56px;
 }
 
-.ore-chip,
-.auto-chip {
+.ore-chip {
   display: inline-block;
   padding: 1px 7px;
   border-radius: 999px;
@@ -549,9 +548,44 @@ h3 {
   background: #8a6656;
   color: #f7ebe3;
 }
-.auto-chip {
+.auto-badge {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
   background: var(--turq);
   color: #fff;
+  border: 1.5px solid rgba(0, 0, 0, 0.45);
+}
+.auto-badge .icon {
+  animation: auto-spin 2.4s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .auto-badge .icon {
+    animation: none;
+  }
+}
+@keyframes auto-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.unit-card__level {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+/* Narrow phones: the badge becomes a corner sticker so the upgrade button never hides it. */
+@container unit-card (max-width: 184px) {
+  .unit-card .auto-badge {
+    position: absolute;
+    top: -9px;
+    left: -9px;
+    width: 20px;
+    height: 20px;
+  }
 }
 
 .level-badge {
@@ -635,6 +669,7 @@ h3 {
 /* unit cards on the surface */
 .unit-card {
   position: absolute;
+  container: unit-card / inline-size;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -1199,6 +1234,12 @@ h3 {
   padding: 0;
   margin-bottom: 6px;
   font-weight: 900;
+}
+.setting__hint {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink-soft);
 }
 
 /* Settings › Save */

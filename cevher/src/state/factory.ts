@@ -63,7 +63,7 @@ export function createInitialState(cfg: GameConfig, wallClockNow: number): GameS
     boosts: [],
     contracts: { day: 0, active: [], rerollsUsed: 0 },
     mines: { [mineId]: newMineState(cfg, mineId, 0) },
-    settings: { locale: 'tr', notation: 'short' },
+    settings: { locale: 'tr', notation: 'short', playMode: 'tap' },
     stats: { totalEarned: ZERO, taps: 0, levelsBought: 0 },
     flags: {},
   };

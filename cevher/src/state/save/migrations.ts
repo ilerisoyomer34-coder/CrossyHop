@@ -12,8 +12,15 @@ import { SaveError } from './SaveError';
 export type SaveData = Record<string, unknown>;
 export type Migration = (data: SaveData) => SaveData;
 
+function asRecord(value: unknown): SaveData {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+    ? (value as SaveData)
+    : {};
+}
+
 export const MIGRATIONS: Readonly<Record<number, Migration>> = {
-  // 1: (data) => ({ ...data, newField: defaultValue }),   ← v1 → v2 goes here
+  /** v1 → v2 (game 0.3.0): play mode setting; existing players keep tapping. */
+  1: (data) => ({ ...data, settings: { ...asRecord(data.settings), playMode: 'tap' } }),
 };
 
 export function migrate(

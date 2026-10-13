@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'preact/hooks';
 import { setLocale, t, type Locale } from '../../i18n/t';
 import type { Notation } from '../../i18n/formatNumber';
 import { updateSettings } from '../../state/actions';
-import type { GameState } from '../../state/GameState';
+import type { GameState, PlayMode } from '../../state/GameState';
 import { Icon } from '../components/Icon';
 import { useRuntime } from '../runtime';
 import { settingsOpen } from '../store';
@@ -13,11 +13,15 @@ function Choice<T extends string>({
   value,
   options,
   onChange,
+  hint,
+  testId,
 }: {
   label: string;
   value: T;
   options: { value: T; label: string }[];
   onChange: (v: T) => void;
+  hint?: string;
+  testId?: string;
 }) {
   return (
     <fieldset class="setting">
@@ -30,12 +34,18 @@ function Choice<T extends string>({
             role="radio"
             aria-checked={o.value === value}
             class={`segmented__item ${o.value === value ? 'is-active' : ''}`}
+            data-testid={testId ? `${testId}-${o.value}` : undefined}
             onClick={() => onChange(o.value)}
           >
             {o.label}
           </button>
         ))}
       </div>
+      {hint && (
+        <p class="setting__hint" data-testid={testId ? `${testId}-hint` : undefined}>
+          {hint}
+        </p>
+      )}
     </fieldset>
   );
 }
@@ -62,6 +72,9 @@ export function SettingsModal({ state }: { state: GameState }) {
   const setNotation = (notation: Notation): void => {
     runtime.game.dispatch((s) => updateSettings(s, { notation }));
   };
+  const setPlayMode = (playMode: PlayMode): void => {
+    runtime.game.dispatch((s) => updateSettings(s, { playMode }));
+  };
   const setLanguage = (locale: Locale): void => {
     setLocale(locale);
     runtime.game.dispatch((s) => updateSettings(s, { locale }));
@@ -87,6 +100,21 @@ export function SettingsModal({ state }: { state: GameState }) {
             <Icon name="close" size={20} />
           </button>
         </header>
+        <Choice<PlayMode>
+          label={t('settings.playMode')}
+          value={state.settings.playMode}
+          options={[
+            { value: 'tap', label: t('settings.playModeTap') },
+            { value: 'auto', label: t('settings.playModeAuto') },
+          ]}
+          onChange={setPlayMode}
+          hint={
+            state.settings.playMode === 'auto'
+              ? t('settings.playModeHintAuto')
+              : t('settings.playModeHintTap')
+          }
+          testId="play-mode"
+        />
         <Choice<Notation>
           label={t('settings.notation')}
           value={state.settings.notation}

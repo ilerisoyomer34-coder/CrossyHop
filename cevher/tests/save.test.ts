@@ -1,4 +1,3 @@
-import { compressToBase64 } from 'lz-string';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { D } from '../src/core/BigNum';
 import { createBrowserStore, MemoryStore, type KeyValueStore } from '../src/platform/storage';
@@ -6,6 +5,7 @@ import { debugSetAutoRun } from '../src/state/actions';
 import { STATE_VERSION, type GameState } from '../src/state/GameState';
 import { AutoSave } from '../src/state/save/AutoSave';
 import { fnv1a } from '../src/state/save/checksum';
+import { compressText } from '../src/state/save/compress';
 import { migrate, type Migration } from '../src/state/save/migrations';
 import { SaveError, type SaveErrorCode } from '../src/state/save/SaveError';
 import {
@@ -46,7 +46,7 @@ function expectSaveError(fn: () => unknown, code: SaveErrorCode): void {
 
 /** Re-wraps decoded save data in a valid envelope (to test the decoder, not the checksum). */
 function envelopeWith(data: unknown, v = STATE_VERSION, t = 1000): string {
-  const d = compressToBase64(JSON.stringify(data));
+  const d = compressText(JSON.stringify(data));
   return JSON.stringify({ v, t, d, c: fnv1a(`${v}:${t}:${d}`) } satisfies SaveEnvelope);
 }
 
@@ -92,10 +92,10 @@ describe('save round-trip', () => {
 
   it('round-trips settings, flags and stats', () => {
     let state = debugSetAutoRun(freshState(), true).state;
-    state = { ...state, settings: { locale: 'en', notation: 'scientific' } };
+    state = { ...state, settings: { locale: 'en', notation: 'scientific', playMode: 'auto' } };
     state = { ...state, stats: { totalEarned: D(987654321), taps: 17, levelsBought: 9 } };
     const { state: loaded } = readSave(writeSave(state, 1), cfg);
-    expect(loaded.settings).toEqual({ locale: 'en', notation: 'scientific' });
+    expect(loaded.settings).toEqual({ locale: 'en', notation: 'scientific', playMode: 'auto' });
     expect(loaded.flags).toEqual(state.flags);
     expect(loaded.stats.taps).toBe(17);
     expect(loaded.stats.totalEarned.eq(987654321)).toBe(true);
