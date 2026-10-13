@@ -1,6 +1,6 @@
 /**
  * Uçtan uca duman testi (GDD 13.11): oyun açılır → Kat 1'e dokunulur → ilk satış gerçekleşir →
- * ilk yükseltme alınır. "Sayfa yenilenir → ilerleme korunur" adımı kayıt sistemiyle (Faz 1) eklenir.
+ * ilk yükseltme alınır → sayfa yenilenir → ilerleme korunur.
  */
 import { expect, test, type Page } from '@playwright/test';
 import type { DebugApi } from '../../src/main';
@@ -24,7 +24,9 @@ function parseShort(text: string | null): number {
   return value * 10 ** exp;
 }
 
-test('first loop: dig → elevator → carriers → first sale → first upgrade', async ({ page }) => {
+test('first loop: dig → elevator → carriers → first sale → first upgrade → reload', async ({
+  page,
+}) => {
   const errors = collectErrors(page);
   await page.goto('/');
   await expect(page.locator('canvas.mine-canvas')).toBeVisible();
@@ -69,6 +71,12 @@ test('first loop: dig → elevator → carriers → first sale → first upgrade
   // The upgrade panel opens from the row and shows the new level.
   await page.getByTestId('shaft-info-0').click();
   await expect(page.getByTestId('panel-level')).toContainText('2');
+
+  // Closing / reloading the page keeps the progress.
+  await page.reload();
+  await expect(page.locator('canvas.mine-canvas')).toBeVisible();
+  await expect(page.getByTestId('shaft-level-0')).toHaveText('Sv. 2');
+  await expect(page.locator('.toasts')).toContainText('Kaldığın yerden devam');
 
   expect(errors, errors.join('\n')).toEqual([]);
 });

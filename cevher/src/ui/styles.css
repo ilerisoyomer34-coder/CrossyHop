@@ -1160,6 +1160,9 @@ h3 {
 }
 .modal {
   width: min(420px, 100%);
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -1196,6 +1199,91 @@ h3 {
   padding: 0;
   margin-bottom: 6px;
   font-weight: 900;
+}
+
+/* Settings › Save */
+.save-status {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+.save-status--warn {
+  color: var(--rust-dark);
+}
+.save-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.save-btn {
+  flex: 1 1 auto;
+  min-height: 44px;
+  padding: 6px 12px;
+  border-radius: 12px;
+  border: 2px solid var(--brass);
+  background: rgba(59, 42, 32, 0.06);
+  color: var(--ink);
+  font-weight: 900;
+  font-size: 15px;
+  cursor: pointer;
+  transition: transform var(--press-ms) ease;
+}
+.save-btn:active:not(:disabled) {
+  transform: scale(var(--press-scale));
+}
+.save-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.save-btn.is-active {
+  background: rgba(42, 157, 143, 0.14);
+  border-color: var(--turq);
+}
+.save-btn--primary {
+  flex: 0 0 auto;
+  background: var(--turq);
+  border-color: var(--turq-dark);
+  color: #fff;
+}
+.save-btn--danger {
+  border-color: var(--rust);
+  color: var(--rust-dark);
+}
+.save-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.save-box__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.save-text {
+  width: 100%;
+  resize: vertical;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 2px solid var(--brass);
+  background: rgba(255, 255, 255, 0.55);
+  color: var(--ink);
+  font:
+    12px/1.35 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Consolas,
+    monospace;
+  word-break: break-all;
+}
+.save-hint {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+.save-hint--error {
+  color: var(--rust-dark);
 }
 
 /* ------------------------------------------------------------------ feedback */

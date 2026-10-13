@@ -15,7 +15,6 @@ import {
   debugSetAutoRun,
   debugUnlockAllShafts,
 } from '../state/actions';
-import { createInitialState } from '../state/factory';
 import { FLAG_DEBUG_AUTORUN, type GameState } from '../state/GameState';
 import { chainFlows } from '../state/selectors';
 import { Icon } from '../ui/components/Icon';
@@ -109,6 +108,20 @@ export function DebugPanel({ state }: { state: GameState }) {
               onClick={() => game.fastForward(m * 60_000, engineConfig.debug.fastForwardStepMs)}
             >
               {t('debug.minutes', { n: m })}
+            </button>
+          ))}
+        </div>
+        <div class="debug-row">
+          <span class="debug-label">{t('debug.offline')}</span>
+          {engineConfig.debug.offlineHours.map((h) => (
+            <button
+              type="button"
+              key={h}
+              class="chip"
+              data-testid={`debug-away-${h}`}
+              onClick={() => runtime.save.simulateAway(h)}
+            >
+              {t('debug.hours', { n: h })}
             </button>
           ))}
         </div>
@@ -207,7 +220,7 @@ export function DebugPanel({ state }: { state: GameState }) {
               return;
             }
             setConfirmReset(false);
-            game.replaceState(createInitialState(cfg, Date.now()));
+            runtime.save.newGame();
             runtime.camera.scrollTo(0, false);
           }}
         >

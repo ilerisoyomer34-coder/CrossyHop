@@ -57,6 +57,7 @@ export function TopBar({ state }: { state: GameState }) {
         type="button"
         class="icon-btn"
         aria-label={t('hud.settings')}
+        data-testid="settings-open"
         onClick={() => (settingsOpen.value = true)}
       >
         <Icon name="gear" size={22} />

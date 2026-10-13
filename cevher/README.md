@@ -4,8 +4,9 @@ Dedesinden kalan terk edilmiş madeni devralan maden mühendisi **Defne**'nin, k
 taşıma zincirini optimize ederek Anadolu dağlarından Ay'a uzanan bir maden imparatorluğu kurduğu
 özgün bir idle/tycoon oyunu.
 
-> **Durum: Faz 0 — Gri kutu prototip.** Tasarım dokümanı: [`docs/GDD.md`](docs/GDD.md) ·
-> Faz raporu: [`docs/reports/faz-0.md`](docs/reports/faz-0.md)
+> **Durum: Faz 0 — Gri kutu prototip + kayıt sistemi (Faz 1'den öne alındı).** Tasarım dokümanı:
+> [`docs/GDD.md`](docs/GDD.md) · Raporlar: [`faz-0.md`](docs/reports/faz-0.md),
+> [`faz-1-kayit.md`](docs/reports/faz-1-kayit.md)
 
 ## Hemen oyna
 
@@ -42,6 +43,20 @@ yazdığı `Network:` adresini telefon tarayıcısında açın.
 İpuçları: Yükselt düğmesini **basılı tutarak** hızlı alım yapılır; sağ alttaki çip satın alma
 miktarını değiştirir (×1 → ×10 → ×50 → MAKS → Dönüm); üst bara çift dokunmak en üste kaydırır.
 
+## Kayıt
+
+İlerleme tarayıcıya (`localStorage`) **otomatik** kaydedilir: 30 sn'de bir, sekme gizlenince, sayfa
+kapanırken ve her işlemden 2 sn sonra. Sayfayı kapatıp açınca oyun kaldığı yerden devam eder; kaya
+engeli patlatması siz yokken de sürer. Ayarlar (⚙) › **Kayıt** bölümünden:
+
+- **Dışa aktar:** Kaydı tek satırlık bir metin olarak kopyalayın (başka cihaza taşımak / yedek için).
+- **İçe aktar:** Bu metni yapıştırıp **Yükle**'ye basın.
+- **Yeni oyun:** Tüm kayıtları siler (onay için iki kez dokunulur).
+
+Ana kayıt bozulursa son sağlam yedek (2 dönüşümlü yedek) yüklenir ve oyuncuya bildirilir. Gizli
+sekme gibi kayda izin vermeyen tarayıcılarda oyun bunu açıkça uyarır. Kayıtlar tarayıcıya ve siteye
+bağlıdır: tarayıcı verilerini silmek kaydı da siler (önce dışa aktarın).
+
 ## Komutlar
 
 | Komut                                                   | Ne yapar                                                                                                               |
@@ -49,7 +64,7 @@ miktarını değiştirir (×1 → ×10 → ×50 → MAKS → Dönüm); üst bara
 | `npm run dev`                                           | Geliştirme sunucusu (hata ayıklama paneli açık)                                                                        |
 | `npm run build`                                         | Tip denetimi + üretim derlemesi (`dist/`)                                                                              |
 | `npm run preview`                                       | Üretim derlemesini yerelde sunar                                                                                       |
-| `npm test`                                              | Vitest birim testleri (ekonomi, toplu alım, biçimlendirme, simülasyon, bot, döngü)                                     |
+| `npm test`                                              | Vitest birim testleri (ekonomi, toplu alım, biçimlendirme, simülasyon, bot, döngü, kayıt, çevrimdışı)                  |
 | `npm run test:e2e`                                      | Playwright uçtan uca testler (mobil 390×844 + masaüstü 1440×900)                                                       |
 | `npm run lint` · `npm run typecheck` · `npm run format` | Kod kalitesi                                                                                                           |
 | `npm run check`                                         | typecheck + lint + test                                                                                                |
@@ -61,7 +76,8 @@ miktarını değiştirir (×1 → ×10 → ×50 → MAKS → Dönüm); üst bara
 
 Geliştirme modunda her zaman, üretim derlemesinde `?debug=1` (veya `#debug`) ile açılır (sol alttaki böcek düğmesi):
 zaman hızı ×1/×10/×100/×1000, duraklat, ileri sar (1/10/60 dk), nakit/kristal/JP ekleme, tüm katları
-açma, engeli bitirme, **otomatik çalıştırma** (yönetici simülasyonu), **açgözlü bot**, oyunu sıfırlama,
+açma, engeli bitirme, **otomatik çalıştırma** (yönetici simülasyonu), **açgözlü bot**, 1/2/8 saat
+**yokluk simülasyonu** (çevrimdışı gelir), oyunu sıfırlama,
 FPS / kare süresi / draw call / kare başına JS süresi, ham akış değerleri, ölçülen satış ve kat açılış
 süreleri.
 
@@ -75,11 +91,14 @@ src/
   core/      GameLoop (20 Hz sabit adım + enterpolasyon), Game (orkestratör), EventBus, BigNum, Rng, Clock
   data/      economy.json · mines.json · regions.json · feel.json · engine.json · i18n/{tr,en}.json
   state/     GameState (değişmez model), actions (saf eylemler), selectors, events, factory
-  sim/       Economy (formüller), Shaft/Elevator/Logistics/Barrier sistemleri, Simulation, bots/
+    save/    SaveManager (zarf + yedekler), serialize (Decimal ⇄ metin, doğrulama), migrations,
+             checksum (FNV-1a), AutoSave
+  sim/       Economy (formüller), Shaft/Elevator/Logistics/Barrier sistemleri, Simulation,
+             OfflineCalculator (analitik çevrimdışı ilerleme), bots/
   render/    Pixi sahnesi: MineScene, Surface/Shaft/Elevator/Logistics/Bottom view, kamera, yer tutucu sanat
   ui/        Preact arayüzü: HUD, darboğaz zinciri, dünya katmanı, yükseltme paneli, ayarlar
   debug/     Hata ayıklama paneli, draw call sayacı
-  platform/  haptics + platform sağlayıcı arayüzleri
+  platform/  storage (localStorage soyutlaması), haptics, platform sağlayıcı arayüzleri
 tools/       balance-sim.ts
 tests/       Vitest birim testleri + e2e/ (Playwright)
 ```

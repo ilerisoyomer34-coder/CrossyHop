@@ -196,6 +196,16 @@ export interface EngineConfig {
     timeScales: number[];
     fastForwardMinutes: number[];
     fastForwardStepMs: number;
+    /** "Away for X hours" buttons (offline progress simulation). */
+    offlineHours: number[];
+  };
+  save: {
+    keyPrefix: string;
+    autosaveMs: number;
+    /** Delay after the last important action before saving. */
+    debounceMs: number;
+    /** Minimum time between backup rotations. */
+    backupIntervalMs: number;
   };
   render: {
     maxResolution: number;
