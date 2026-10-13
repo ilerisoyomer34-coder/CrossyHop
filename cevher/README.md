@@ -6,7 +6,7 @@ taşıma zincirini optimize ederek Anadolu dağlarından Ay'a uzanan bir maden i
 
 > **Durum: Faz 0 — Gri kutu prototip + kayıt sistemi (Faz 1'den öne alındı).** Tasarım dokümanı:
 > [`docs/GDD.md`](docs/GDD.md) · Raporlar: [`faz-0.md`](docs/reports/faz-0.md),
-> [`faz-1-kayit.md`](docs/reports/faz-1-kayit.md)
+> [`faz-1-kayit.md`](docs/reports/faz-1-kayit.md), [`oynanis-modu.md`](docs/reports/oynanis-modu.md)
 
 ## Hemen oyna
 
@@ -39,6 +39,12 @@ yazdığı `Network:` adresini telefon tarayıcısında açın.
    patlat (1 dk, bedava).
 5. Üstteki **üretim zinciri** en yavaş halkayı (Darboğaz) gösterir; ona dokununca ilgili birime gidip
    yükseltme panelini açar.
+
+**Oynanış modu (Ayarlar ⚙ › Oynanış):** Yeni oyun **Dokunmalı** başlar: yukarıdaki adımlarda her birime
+sen dokunursun. **Otomatik** seçilince katlar, asansör ve taşıyıcılar hiç dokunmadan kendi kendine çalışır
+(aynı hızda; ikisi arasında bonus ya da ceza yok). Otomatik mod yalnızca oyun açıkken üretir: oyun
+kapalıyken (ya da sekme 5 sn'den uzun arka plandayken) üretim durur. Kapalıyken çalışma ileride
+yöneticilerle (Faz 1) gelecek. Otomatik birimlerin seviye rozetinin yanında dönen ok simgesi görünür.
 
 İpuçları: Yükselt düğmesini **basılı tutarak** hızlı alım yapılır; sağ alttaki çip satın alma
 miktarını değiştirir (×1 → ×10 → ×50 → MAKS → Dönüm); üst bara çift dokunmak en üste kaydırır.

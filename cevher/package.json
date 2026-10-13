@@ -1,6 +1,6 @@
 {
   "name": "cevher-maden-baronu",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "CEVHER: Maden Baronu — idle/tycoon madencilik oyunu (Faz 0: gri kutu prototip)",
   "type": "module",
