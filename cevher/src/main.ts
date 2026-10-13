@@ -12,13 +12,19 @@ import { instrumentDrawCalls } from './debug/drawCallCounter';
 import { formatNumber } from './i18n/formatNumber';
 import { setLocale, t } from './i18n/t';
 import { vibrate } from './platform/haptics';
+import { createBrowserStore } from './platform/storage';
 import { ScrollCamera } from './render/camera/ScrollCamera';
 import { computeLayout, maxScroll, rowTop } from './render/layout';
 import { MineScene } from './render/MineScene';
 import { createInitialState } from './state/factory';
+import type { GameState } from './state/GameState';
+import { AutoSave } from './state/save/AutoSave';
+import { SaveManager } from './state/save/SaveManager';
 import { defaultConfig } from './sim/GameConfig';
+import { applyOffline, calculateOffline, type OfflineReport } from './sim/OfflineCalculator';
 import { App, type AppRefs } from './ui/App';
-import { RuntimeContext, type FrameHook, type Runtime } from './ui/runtime';
+import { showLoadNotice, showOfflineNotice } from './ui/notices';
+import { RuntimeContext, type FrameHook, type Runtime, type SaveControls } from './ui/runtime';
 import { FloatingTexts } from './ui/world/FloatingTexts';
 import {
   bindGame,
@@ -67,12 +73,70 @@ function boot(): void {
   watchMedia('(prefers-reduced-motion: reduce)', (m) => (reducedMotion.value = m));
   watchMedia('(min-width: 900px)', (m) => (isWide.value = m));
 
-  let initial = createInitialState(cfg, systemClock.now());
+  // Continue the saved game (crediting the time away) or start a new one.
+  const saveCfg = engineConfig.save;
+  const saves = new SaveManager(createBrowserStore(), cfg, saveCfg);
+  const loaded = saves.load();
+  for (const err of loaded.errors) console.warn('[CEVHER]', err.message);
+  let initial: GameState;
+  let awayReport: OfflineReport | null = null;
+  if (loaded.state) {
+    awayReport = calculateOffline(loaded.state, loaded.state.lastSavedAt, systemClock.now(), cfg);
+    initial = applyOffline(loaded.state, awayReport);
+  } else {
+    initial = createInitialState(cfg, systemClock.now());
+  }
   if (debugEnabled && params.get('auto') === '1')
     initial = actions.debugSetAutoRun(initial, true).state;
   const game = new Game(cfg, initial);
   if (debugEnabled && params.get('bot') === '1') game.botEnabled = true;
   setLocale(game.state.settings.locale);
+
+  let saveFailureShown = false;
+  const autosave = new AutoSave(
+    () => {
+      if (saves.save(game.state, systemClock.now()) || saveFailureShown) return;
+      saveFailureShown = true;
+      showToast(t('save.failed'), 'info', 6000);
+    },
+    { intervalMs: saveCfg.autosaveMs, debounceMs: saveCfg.debounceMs },
+  );
+  game.subscribe((reason) => {
+    if (reason === 'action') autosave.schedule();
+    else if (reason === 'reset') autosave.flush();
+  });
+
+  /** Credits wall-clock time away (closed page, long-hidden tab) and tells the player. */
+  const creditAway = (fromWallMs: number, alwaysNotify = false): void => {
+    const report = calculateOffline(game.state, fromWallMs, systemClock.now(), cfg);
+    game.dispatch((s) => ({ ok: true, state: applyOffline(s, report), events: [] }));
+    showOfflineNotice(report, game.state.settings, alwaysNotify);
+  };
+
+  const saveControls: SaveControls = {
+    persistent: saves.persistent,
+    exportText: () => saves.exportText(game.state, systemClock.now()),
+    importText: (text) => {
+      let state: GameState;
+      try {
+        state = saves.importText(text);
+      } catch (err) {
+        console.warn('[CEVHER] import failed:', err instanceof Error ? err.message : String(err));
+        return false;
+      }
+      const report = calculateOffline(state, state.lastSavedAt, systemClock.now(), cfg);
+      game.replaceState(applyOffline(state, report));
+      showToast(t('save.imported'), 'success');
+      showOfflineNotice(report, game.state.settings);
+      return true;
+    },
+    newGame: () => {
+      saves.clear();
+      game.replaceState(createInitialState(cfg, systemClock.now()));
+      showToast(t('save.newGameDone'), 'success');
+    },
+    simulateAway: (hours) => creditAway(systemClock.now() - hours * 3_600_000, true),
+  };
 
   const camera = new ScrollCamera(feelConfig.scroll);
   const frameHooks = new Set<FrameHook>();
@@ -103,6 +167,7 @@ function boot(): void {
     version: __APP_VERSION__,
     frameHooks,
     drawCalls: () => lastDrawCalls,
+    save: saveControls,
   };
   bindGame(game, feelConfig.uiUpdateHz);
   game.subscribe((reason) => {
@@ -199,19 +264,29 @@ function boot(): void {
     document.getElementById('app') as HTMLElement,
   );
 
-  // Pause rendering while hidden; short hides are caught up, long ones are handled by the
-  // OfflineCalculator in Phase 1 (Phase 0 simply resumes, no offline income without managers).
+  // Pause while hidden and save. Short hides are caught up by the loop; long ones are credited
+  // analytically by the OfflineCalculator (GDD 13.3), like a closed page.
   let hiddenAt = 0;
+  let hiddenAtWall = 0;
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
       hiddenAt = performance.now();
+      hiddenAtWall = systemClock.now();
       loop.stop();
+      autosave.flush();
     } else {
       const gap = performance.now() - hiddenAt;
+      if (gap > loopCfg.longHideMs) creditAway(hiddenAtWall);
       loop.start(gap <= loopCfg.longHideMs ? gap : 0);
     }
   });
+  window.addEventListener('pagehide', () => autosave.flush());
+  autosave.start();
   loop.start();
+
+  const offlineShown = awayReport ? showOfflineNotice(awayReport, game.state.settings) : false;
+  showLoadNotice(loaded, offlineShown);
+  if (!saves.persistent) showToast(t('save.unavailable'), 'info', 6000);
 
   if (debugEnabled) {
     // Handy for e2e tests and the console.

@@ -37,3 +37,13 @@ export function unitName(unit: UnitRef): string {
       return t('logistics.name');
   }
 }
+
+/** Human "time away" text: "2 sa 5 dk", "12 dk", "40 sn". */
+export function formatAway(ms: number): string {
+  const totalSec = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  if (h > 0) return t('time.hm', { h, m });
+  if (m > 0) return t('time.m', { m });
+  return t('time.s', { s: totalSec });
+}

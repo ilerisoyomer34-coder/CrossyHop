@@ -6,6 +6,7 @@ import type { GameState } from '../../state/GameState';
 import { Icon } from '../components/Icon';
 import { useRuntime } from '../runtime';
 import { settingsOpen } from '../store';
+import { SaveSection } from './SaveSection';
 
 function Choice<T extends string>({
   label,
@@ -104,6 +105,7 @@ export function SettingsModal({ state }: { state: GameState }) {
           ]}
           onChange={setLanguage}
         />
+        <SaveSection />
         <p class="modal__foot">{t('settings.version', { version: runtime.version })}</p>
       </div>
     </div>

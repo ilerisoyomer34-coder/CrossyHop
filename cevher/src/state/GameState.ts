@@ -2,8 +2,8 @@
  * Game state model (GDD 13.4).
  *
  * The state is immutable: actions and the simulation step return new objects (structural
- * sharing). Money is held as `Decimal` in memory; the save system (Phase 1) serialises Decimals to
- * strings as described in the GDD.
+ * sharing). Money is held as `Decimal` in memory; the save system (`state/save/`) stores Decimals as
+ * strings. Any change to this shape bumps STATE_VERSION and adds a migration + test.
  *
  * Moving units do not store per-tick timers. Instead each unit stores *absolute* simulation times
  * (cycle start, phase start/end). The state therefore only changes when something happens
@@ -139,7 +139,7 @@ export interface GameState {
   version: number;
   /** Wall-clock creation time (epoch ms). */
   createdAt: number;
-  /** Wall-clock time of the last save (epoch ms); used for offline income in Phase 1. */
+  /** Wall-clock time of the last save (epoch ms); offline progress is measured from it. */
   lastSavedAt: number;
   /** Simulation clock in ms; advances only through simulation steps. */
   time: number;
@@ -160,3 +160,5 @@ export interface GameState {
 
 /** Well-known flag names. */
 export const FLAG_DEBUG_AUTORUN = 'debugAutoRun';
+/** Set when the device clock went backwards between saves (GDD 5.7 clock guard). */
+export const FLAG_CLOCK_REWOUND = 'clockRewound';

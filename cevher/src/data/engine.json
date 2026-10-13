@@ -9,7 +9,14 @@
   "debug": {
     "timeScales": [1, 10, 100, 1000],
     "fastForwardMinutes": [1, 10, 60],
-    "fastForwardStepMs": 250
+    "fastForwardStepMs": 250,
+    "offlineHours": [1, 2, 8]
+  },
+  "save": {
+    "keyPrefix": "cevher.save",
+    "autosaveMs": 30000,
+    "debounceMs": 2000,
+    "backupIntervalMs": 300000
   },
   "render": {
     "maxResolution": 2,
