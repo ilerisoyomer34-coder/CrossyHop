@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { D } from '../src/core/BigNum';
+import { D, type Decimal } from '../src/core/BigNum';
 import { debugSetAutoRun, startBarrierBlast, tapUnit, updateSettings } from '../src/state/actions';
 import { STATE_VERSION, type GameState, type PlayMode } from '../src/state/GameState';
 import { unitAutomated } from '../src/state/selectors';
@@ -8,6 +8,7 @@ import { readSave, writeSave } from '../src/state/save/SaveManager';
 import { SaveError } from '../src/state/save/SaveError';
 import { encodeState } from '../src/state/save/serialize';
 import { isAutomated, worksOffline } from '../src/sim/automation';
+import { minerCycleStart } from '../src/sim/ShaftSystem';
 import { runGreedyBot } from '../src/sim/bots/runBot';
 import { applyOffline, calculateOffline } from '../src/sim/OfflineCalculator';
 import { runSimulation } from '../src/sim/Simulation';
@@ -24,6 +25,15 @@ function withMode(state: GameState, playMode: PlayMode): GameState {
 /** Five open shafts, levelled up a little, plenty of cash; played in tap mode. */
 function midGame(): GameState {
   return runGreedyBot(cfg, { untilShafts: 5, maxSeconds: 1800, mode: 'tap' }).state;
+}
+
+/** Ore anywhere in the chain plus cash from sales (sale multiplier is 1 in Phase 0). */
+function oreInMine(state: GameState): Decimal {
+  const m = mine(state);
+  let total = m.cash.add(m.surfaceStock).add(m.elevator.load);
+  for (const s of m.shafts) total = total.add(s.stored);
+  for (const c of m.logistics.carriers) total = total.add(c.load);
+  return total;
 }
 
 function allIdle(state: GameState): boolean {
@@ -99,6 +109,68 @@ describe('play mode setting', () => {
     expect(mine(later).cash.eq(cash)).toBe(true);
   });
 
+  it('switching to tap mode lets every miner finish the cycle it is in (no ore lost)', () => {
+    const cycleMs = cfg.economy.shaftCycleMs();
+    // One shaft with several miners, automated long enough for all of them to be mid-cycle.
+    let state = patchMine(freshState(), (m) => ({
+      ...m,
+      shafts: m.shafts.map((s) => ({ ...s, level: 120 })),
+    }));
+    const miners = cfg.economy.minerCount(120);
+    expect(miners).toBeGreaterThan(3);
+    state = runSimulation(withMode(state, 'auto'), 3 * cycleMs + 1234, 50, cfg).state;
+    const switchAt = state.time;
+    const oreAtSwitch = oreInMine(state);
+    const shaft0 = mine(state).shafts[0];
+    expect(shaft0?.autoSince).not.toBeNull();
+    // Cycles that are running at the switch (one per miner whose chain has started).
+    const running = Array.from({ length: miners }, (_, j) =>
+      shaft0 ? minerCycleStart(shaft0, j, switchAt, cycleMs) : null,
+    ).filter((start) => start !== null).length;
+    expect(running).toBe(miners);
+
+    state = withMode(state, 'tap');
+    const step = runSimulation(state, 50, 50, cfg).state;
+    // Nobody snaps home: miners are still mid-cycle right after the switch...
+    const after = mine(step).shafts[0];
+    const posed = Array.from({ length: miners }, (_, j) =>
+      after ? minerCycleStart(after, j, step.time, cycleMs) : null,
+    ).filter((start) => start !== null).length;
+    expect(posed).toBe(miners);
+    // ...tapping is refused while they finish...
+    expect(tapUnit(step, MINE, { kind: 'shaft', index: 0 }, cfg).ok).toBe(false);
+
+    // ...and exactly one more load per miner arrives, then the shaft rests and can be tapped.
+    const done = runSimulation(step, 2 * cycleMs, 50, cfg).state;
+    const load = cfg.economy.shaftLoadPerMiner(1, 120, 1);
+    // Elevator and carriers only move ore (and sell it 1:1), so any increase came from the miners.
+    const delivered = oreInMine(done).sub(oreAtSwitch);
+    expect(delivered.div(load).toNumber()).toBeCloseTo(miners, 6);
+    expect(mine(done).shafts[0]?.autoSince).toBeNull();
+    expect(mine(done).shafts[0]?.autoUntil).toBeNull();
+    expect(tapUnit(done, MINE, { kind: 'shaft', index: 0 }, cfg).ok).toBe(true);
+  });
+
+  it('switching back to automatic while miners wind down continues the loop seamlessly', () => {
+    const cycleMs = cfg.economy.shaftCycleMs();
+    const base = patchMine(withMode(freshState(), 'auto'), (m) => ({
+      ...m,
+      shafts: m.shafts.map((s) => ({ ...s, level: 60 })),
+    }));
+    const warm = runSimulation(base, 2 * cycleMs + 700, 50, cfg).state;
+    const steady = runSimulation(warm, 4 * cycleMs, 50, cfg).state;
+
+    let toggled = runSimulation(withMode(warm, 'tap'), 300, 50, cfg).state;
+    expect(mine(toggled).shafts[0]?.autoUntil).not.toBeNull();
+    toggled = runSimulation(withMode(toggled, 'auto'), 4 * cycleMs - 300, 50, cfg).state;
+    expect(mine(toggled).shafts[0]?.autoUntil).toBeNull();
+    // A short detour to tap mode never creates ore; at most it loses cycles that began meanwhile.
+    const a = mine(steady).shafts[0]?.stored ?? D(0);
+    const b = mine(toggled).shafts[0]?.stored ?? D(0);
+    expect(b.lte(a)).toBe(true);
+    expect(b.gt(0)).toBe(true);
+  });
+
   it('switching to automatic mode lets a running manual cycle finish first', () => {
     const tapped = tapUnit(freshState(), MINE, { kind: 'shaft', index: 0 }, cfg).state;
     const endsAt = mine(tapped).shafts[0]?.manualCycleEndsAt;
@@ -140,6 +212,7 @@ describe('save schema v2 (play mode)', () => {
     expect(state.version).toBe(2);
     expect(state.settings).toEqual({ locale: 'en', notation: 'scientific', playMode: 'tap' });
     expect(mine(state).shafts).toHaveLength(5);
+    expect(mine(state).shafts.every((sh) => sh.autoUntil === null)).toBe(true);
     expect(mine(state).cash.eq(D('123456.75'))).toBe(true);
     expect(mine(state).barrier).toEqual({ afterShaft: 5, endsAt: 294_250 });
     expect(state.time).toBe(234_250);

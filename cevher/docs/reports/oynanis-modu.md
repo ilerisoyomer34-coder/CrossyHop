@@ -23,21 +23,31 @@ seçilebilsin."
   böylece otomatik mod kapalıyken para kazandırmıyor, kaya engeli süresi ise gerçek zamanda işlemeye
   devam ediyor.
 - Mod değişince simülasyon sorunsuz geçiş yapıyor: Otomatiğe geçerken yarım kalan elle başlatılmış
-  kazı bitip ardından döngü başlıyor; Dokunmalıya dönerken yoldaki asansör ve vagonlar turlarını
-  tamamlayıp duruyor.
+  kazı bitip ardından döngü başlıyor; Dokunmalıya dönerken **her madenci o anki kazısını bitirip
+  cevheri kasaya bırakıyor** (kat kaydında yeni `autoUntil` alanı), yoldaki asansör ve vagonlar da
+  turlarını tamamlayıp duruyor. Bu sırada o kata dokunmak "meşgul" sayılıyor.
 - Ayarlar › **Oynanış** (Dokunmalı / Otomatik) ve seçili moda göre açıklama metni.
-- Otomatik birimlerde metin etiketi yerine küçük, dönen bir **ok simgesi** (`AutoBadge`): dar
-  telefonlarda metin etiketi yükseltme düğmesinin altına taşıyordu. Dar kartlarda simge kartın
-  köşesine geçer; ekran okuyucular için "Otomatik" etiketi düğme adına eklendi; azaltılmış hareket
-  tercihinde dönmez.
+- Otomatik birimlerde metin etiketi yerine küçük, dönen bir **ok simgesi** (`AutoBadge`): kat
+  satırında yönetici yuvasının köşesinde, asansör/lojistik kartında kartın köşesinde durur. Böylece
+  hiçbir ekran genişliğinde ya da uzun seviye/fiyat metninde yükseltme düğmesinin altında kalmaz ve
+  dönüm noktası çubuğunu kaydırmaz. Ekran okuyucular için "Otomatik" düğme adına eklendi; azaltılmış
+  hareket tercihinde dönmez.
 - `state/save/compress.ts`: lz-string, Node'un yerel ESM yükleyicisinde de (tsx araçları) çalışsın
   diye tek yerden yükleniyor.
 
+## Gözden geçirme
+
+Değişiklik dört bağımsız açıdan incelendi (simülasyon, kayıt/çevrimdışı, arayüz, gereksinim
+uyumu); her bulguyu iki ayrı denetçi çürütmeye çalıştı. 9 bulgudan 3'ü doğrulandı ve düzeltildi:
+Dokunmalıya geçişte madencilerin yarım kazısının kaybolması, kat satırında simgenin dönüm noktası
+çubuğunu yükseltme düğmesinin altına itmesi ve 424–470 px telefonlarda 3 haneli seviyede kart
+simgesinin gizlenmesi. Diğer 6'sı gereksinimle çelişen ya da yeniden üretilemeyen bulgulardı.
+
 ## Doğrulama
 
-- Birim testleri: 172 (14 yeni: varsayılan mod, otomatik modda hiç dokunmadan satış, yönetici
+- Birim testleri: 174 (16 yeni: varsayılan mod, otomatik modda hiç dokunmadan satış, yönetici
   otomasyonuyla birebir aynı üretim, elle/otomatik döngü süresi ve verimi eşit, iki yönde mod
-  geçişi, otomatik modda çevrimdışı gelir 0 ama kaya engeli işliyor, gerçek v1 kaydının göçü,
+  geçişi (Dokunmalıya dönüşte madenci başına tam bir yük daha gelmesi dahil), otomatik modda çevrimdışı gelir 0 ama kaya engeli işliyor, gerçek v1 kaydının göçü,
   bilinmeyen modun reddi).
 - Playwright: Ayarlardan Otomatik → hiç dokunmadan ilk satış → yenileme sonrası mod korunuyor →
   Dokunmalıya dönüş.

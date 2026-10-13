@@ -287,7 +287,8 @@ export function unitBusy(state: GameState, mineId: string, unit: UnitRef): boole
   switch (unit.kind) {
     case 'shaft': {
       const shaft = mine.shafts[unit.index];
-      return shaft !== undefined && shaft.manualCycleEndsAt !== null;
+      // A manual cycle is running, or the miners are finishing their last automatic cycles.
+      return shaft !== undefined && (shaft.manualCycleEndsAt !== null || shaft.autoSince !== null);
     }
     case 'elevator':
       return mine.elevator.phase.kind !== 'idle';

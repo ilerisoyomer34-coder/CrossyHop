@@ -53,15 +53,13 @@ function UnitCard({
         )}
         <span class="unit-card__text">
           <span class="unit-card__name">{unitName(unit)}</span>
-          <span class="unit-card__level">
-            <span class="level-badge" data-testid={`${testId}-level`}>
-              {t('level.short', { level })}
-            </span>
-            {automated && <AutoBadge />}
+          <span class="level-badge" data-testid={`${testId}-level`}>
+            {t('level.short', { level })}
           </span>
         </span>
       </button>
       <UpgradeButton state={state} unit={unit} testId={`${testId}-upgrade`} />
+      {automated && <AutoBadge />}
       <ProgressBar value={(level % every) / every} class="unit-card__bar" />
     </div>
   );

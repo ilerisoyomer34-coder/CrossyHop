@@ -26,6 +26,12 @@ export interface ShaftState {
   managerId?: string;
   /** Simulation time automation began (null while the shaft is operated manually). */
   autoSince: number | null;
+  /**
+   * Simulation time automation was switched off. Miner cycles that started before it still finish
+   * and deliver their ore; afterwards `autoSince` and `autoUntil` return to null. Null while the
+   * shaft is automated or fully manual.
+   */
+  autoUntil: number | null;
   /** End time of a tap-started (manual) dig cycle, or null when no manual cycle is running. */
   manualCycleEndsAt: number | null;
 }

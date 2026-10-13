@@ -65,6 +65,7 @@ function encodeMine(mine: MineState): SaveData {
       stored: dec(s.stored),
       managerId: s.managerId,
       autoSince: s.autoSince,
+      autoUntil: s.autoUntil,
       manualCycleEndsAt: s.manualCycleEndsAt,
     })),
     elevator: {
@@ -247,6 +248,7 @@ function decodeShaft(r: Reader, cfg: GameConfig): ShaftState {
     level: r.int('level', 1, cfg.econ.shaft.maxLevel),
     stored: r.dec('stored'),
     autoSince: r.numOrNull('autoSince'),
+    autoUntil: r.numOrNull('autoUntil'),
     manualCycleEndsAt: r.numOrNull('manualCycleEndsAt'),
   };
   return withManager(shaft, r.optStr('managerId'));
