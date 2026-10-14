@@ -10,19 +10,20 @@
 import { Decimal, toSaveString } from '../../core/BigNum';
 import { isLocale } from '../../i18n/t';
 import { idleCarrier } from '../factory';
-import type {
-  ActiveBarrier,
-  ActiveBoost,
-  CarrierPhaseKind,
-  CarrierState,
-  ContractState,
-  ElevatorPhaseKind,
-  ElevatorState,
-  GameState,
-  LogisticsState,
-  MineState,
-  OwnedManager,
-  ShaftState,
+import {
+  PLAY_MODES,
+  type ActiveBarrier,
+  type ActiveBoost,
+  type CarrierPhaseKind,
+  type CarrierState,
+  type ContractState,
+  type ElevatorPhaseKind,
+  type ElevatorState,
+  type GameState,
+  type LogisticsState,
+  type MineState,
+  type OwnedManager,
+  type ShaftState,
 } from '../GameState';
 import type { GameConfig } from '../../sim/GameConfig';
 import { SaveError } from './SaveError';
@@ -64,6 +65,7 @@ function encodeMine(mine: MineState): SaveData {
       stored: dec(s.stored),
       managerId: s.managerId,
       autoSince: s.autoSince,
+      autoUntil: s.autoUntil,
       manualCycleEndsAt: s.manualCycleEndsAt,
     })),
     elevator: {
@@ -246,6 +248,7 @@ function decodeShaft(r: Reader, cfg: GameConfig): ShaftState {
     level: r.int('level', 1, cfg.econ.shaft.maxLevel),
     stored: r.dec('stored'),
     autoSince: r.numOrNull('autoSince'),
+    autoUntil: r.numOrNull('autoUntil'),
     manualCycleEndsAt: r.numOrNull('manualCycleEndsAt'),
   };
   return withManager(shaft, r.optStr('managerId'));
@@ -373,7 +376,11 @@ export function decodeState(data: unknown, cfg: GameConfig): GameState {
     boosts: r.list('boosts', decodeBoost),
     contracts: decodeContracts(r.obj('contracts')),
     mines,
-    settings: { locale, notation: settings.oneOf('notation', NOTATIONS) },
+    settings: {
+      locale,
+      notation: settings.oneOf('notation', NOTATIONS),
+      playMode: settings.oneOf('playMode', PLAY_MODES),
+    },
     stats: {
       totalEarned: stats.dec('totalEarned'),
       taps: stats.int('taps', 0),

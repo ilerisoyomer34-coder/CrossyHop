@@ -527,8 +527,7 @@ h3 {
   width: 56px;
 }
 
-.ore-chip,
-.auto-chip {
+.ore-chip {
   display: inline-block;
   padding: 1px 7px;
   border-radius: 999px;
@@ -549,9 +548,44 @@ h3 {
   background: #8a6656;
   color: #f7ebe3;
 }
-.auto-chip {
+.auto-badge {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
   background: var(--turq);
   color: #fff;
+  border: 1.5px solid rgba(0, 0, 0, 0.45);
+}
+.auto-badge .icon {
+  animation: auto-spin 2.4s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .auto-badge .icon {
+    animation: none;
+  }
+}
+@keyframes auto-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+/* Corner stickers: never in a text row, so no phone width or level/cost length can hide them. */
+.unit-card .auto-badge,
+.manager-slot .auto-badge {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+}
+.unit-card .auto-badge {
+  top: -9px;
+  left: -5px; /* the elevator card sits 6 px from the screen edge */
+}
+.manager-slot .auto-badge {
+  top: -7px;
+  right: -9px;
 }
 
 .level-badge {
@@ -1199,6 +1233,12 @@ h3 {
   padding: 0;
   margin-bottom: 6px;
   font-weight: 900;
+}
+.setting__hint {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink-soft);
 }
 
 /* Settings › Save */

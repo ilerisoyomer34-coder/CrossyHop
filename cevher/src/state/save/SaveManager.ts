@@ -6,11 +6,11 @@
  * backups rotate at most once per `backupIntervalMs`, so a bad state cannot overwrite every copy
  * within a few seconds. On load the main save is tried first, then the newest intact backup.
  */
-import { compressToBase64, decompressFromBase64 } from 'lz-string';
 import type { KeyValueStore } from '../../platform/storage';
 import type { GameConfig } from '../../sim/GameConfig';
 import { STATE_VERSION, type GameState } from '../GameState';
 import { fnv1a } from './checksum';
+import { compressText, decompressText } from './compress';
 import { migrate } from './migrations';
 import { SaveError } from './SaveError';
 import { decodeState, encodeState } from './serialize';
@@ -53,7 +53,7 @@ function asSaveError(err: unknown): SaveError {
 /** Serialises a state into an envelope string, stamping `lastSavedAt`. */
 export function writeSave(state: GameState, now: number): string {
   const data = encodeState({ ...state, version: STATE_VERSION, lastSavedAt: now });
-  const d = compressToBase64(JSON.stringify(data));
+  const d = compressText(JSON.stringify(data));
   const envelope: SaveEnvelope = {
     v: STATE_VERSION,
     t: now,
@@ -91,7 +91,7 @@ export function readSave(raw: string, cfg: GameConfig): { state: GameState; save
   const envelope = parseEnvelope(raw);
   let json: string | null;
   try {
-    json = decompressFromBase64(envelope.d);
+    json = decompressText(envelope.d);
   } catch {
     json = null;
   }

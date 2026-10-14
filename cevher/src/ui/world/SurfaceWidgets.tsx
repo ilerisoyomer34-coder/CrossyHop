@@ -4,6 +4,7 @@ import type { WorldLayout } from '../../render/layout';
 import { tapUnit } from '../../state/actions';
 import type { GameState, UnitRef } from '../../state/GameState';
 import { unitAutomated } from '../../state/selectors';
+import { AutoBadge } from '../components/AutoBadge';
 import { Icon } from '../components/Icon';
 import { ProgressBar } from '../components/ProgressBar';
 import { UpgradeButton } from '../components/UpgradeButton';
@@ -37,7 +38,9 @@ function UnitCard({
         type="button"
         class="unit-card__info"
         onClick={() => (selectedUnit.value = unit)}
-        aria-label={`${unitName(unit)}, ${t('level.short', { level })}`}
+        aria-label={[unitName(unit), t('level.short', { level }), automated ? t('tap.auto') : '']
+          .filter(Boolean)
+          .join(', ')}
       >
         {showManagerSlot && (
           <span
@@ -49,16 +52,14 @@ function UnitCard({
           </span>
         )}
         <span class="unit-card__text">
-          <span class="unit-card__name">
-            {unitName(unit)}
-            {automated && <span class="auto-chip">{t('tap.auto')}</span>}
-          </span>
+          <span class="unit-card__name">{unitName(unit)}</span>
           <span class="level-badge" data-testid={`${testId}-level`}>
             {t('level.short', { level })}
           </span>
         </span>
       </button>
       <UpgradeButton state={state} unit={unit} testId={`${testId}-upgrade`} />
+      {automated && <AutoBadge />}
       <ProgressBar value={(level % every) / every} class="unit-card__bar" />
     </div>
   );

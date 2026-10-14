@@ -61,7 +61,9 @@ export function tapUnit(
     case 'shaft': {
       const shaft = mine.shafts[unit.index];
       if (!shaft) return failure(state, 'invalid');
-      if (shaft.manualCycleEndsAt !== null) return failure(state, 'busy');
+      if (shaft.manualCycleEndsAt !== null || shaft.autoSince !== null) {
+        return failure(state, 'busy');
+      }
       const shafts = replaceAt(mine.shafts, unit.index, {
         ...shaft,
         manualCycleEndsAt: now + eco.shaftCycleMs(),

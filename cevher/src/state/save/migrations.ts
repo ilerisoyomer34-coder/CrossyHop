@@ -12,8 +12,35 @@ import { SaveError } from './SaveError';
 export type SaveData = Record<string, unknown>;
 export type Migration = (data: SaveData) => SaveData;
 
+function asRecord(value: unknown): SaveData {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+    ? (value as SaveData)
+    : {};
+}
+
+/** Applies `patch` to every shaft of every mine (raw save data). */
+function mapShafts(data: SaveData, patch: (shaft: SaveData) => SaveData): SaveData {
+  const mines = asRecord(data.mines);
+  const next: SaveData = {};
+  for (const [id, raw] of Object.entries(mines)) {
+    const mine = asRecord(raw);
+    next[id] = Array.isArray(mine.shafts)
+      ? { ...mine, shafts: mine.shafts.map((s) => patch(asRecord(s))) }
+      : mine;
+  }
+  return { ...data, mines: next };
+}
+
 export const MIGRATIONS: Readonly<Record<number, Migration>> = {
-  // 1: (data) => ({ ...data, newField: defaultValue }),   ← v1 → v2 goes here
+  /**
+   * v1 → v2 (game 0.3.0): play mode setting (existing players keep tapping) and the shaft's
+   * automation wind-down marker.
+   */
+  1: (data) =>
+    mapShafts({ ...data, settings: { ...asRecord(data.settings), playMode: 'tap' } }, (shaft) => ({
+      ...shaft,
+      autoUntil: null,
+    })),
 };
 
 export function migrate(

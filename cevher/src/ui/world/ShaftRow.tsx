@@ -13,6 +13,7 @@ import { useRuntime } from '../runtime';
 import { selectedUnit } from '../store';
 import { px } from './px';
 import { TapArea } from './TapArea';
+import { AutoBadge } from '../components/AutoBadge';
 
 export function ShaftRow({
   state,
@@ -34,7 +35,7 @@ export function ShaftRow({
   const n = index + 1;
   const ore = oreForShaft(mineDef(cfg, mineId), n);
   const automated = unitAutomated(state, mineId, unit);
-  const idle = shaft.manualCycleEndsAt === null;
+  const idle = shaft.manualCycleEndsAt === null && shaft.autoSince === null;
   const every = cfg.econ.shaft.milestoneEvery;
   const milestoneProgress = (shaft.level % every) / every;
   const top = rowTop(layout, index);
@@ -71,6 +72,8 @@ export function ShaftRow({
         style={{ left: L(layout.crateX), top: L(layout.tunnelTop + 6) }}
       >
         <Icon name="plus" size={18} />
+        {/* The slot is where a manager will sit: automation is shown on its corner. */}
+        {automated && <AutoBadge />}
       </button>
 
       <button
@@ -78,13 +81,19 @@ export function ShaftRow({
         class="row-info"
         style={{ left: L(layout.crateX + 52), top: L(layout.tunnelTop + 4) }}
         onClick={() => (selectedUnit.value = unit)}
-        aria-label={`${name}, ${t(`ore.${ore}` as 'ore.coal')}, ${t('level.short', { level: shaft.level })}`}
+        aria-label={[
+          name,
+          t(`ore.${ore}` as 'ore.coal'),
+          t('level.short', { level: shaft.level }),
+          automated ? t('tap.auto') : '',
+        ]
+          .filter(Boolean)
+          .join(', ')}
         data-testid={`shaft-info-${index}`}
       >
         <span class="row-info__title">
           {name}
           <span class={`ore-chip ore-chip--${ore}`}>{t(`ore.${ore}` as 'ore.coal')}</span>
-          {automated && <span class="auto-chip">{t('tap.auto')}</span>}
         </span>
         <span class="row-info__level">
           <span class="level-badge" data-testid={`shaft-level-${index}`}>
