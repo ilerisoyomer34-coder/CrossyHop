@@ -28,8 +28,8 @@ export interface ShaftState {
   autoSince: number | null;
   /**
    * Simulation time automation was switched off. Miner cycles that started before it still finish
-   * and deliver their ore; afterwards `autoSince` and `autoUntil` return to null. Null while the
-   * shaft is automated or fully manual.
+   * and deliver their ore; once the last one has ended `autoSince` and `autoUntil` return to null
+   * (or a fresh loop starts if automation was switched back on). Null outside a wind-down.
    */
   autoUntil: number | null;
   /** End time of a tap-started (manual) dig cycle, or null when no manual cycle is running. */

@@ -151,24 +151,60 @@ describe('play mode setting', () => {
     expect(tapUnit(done, MINE, { kind: 'shaft', index: 0 }, cfg).ok).toBe(true);
   });
 
-  it('switching back to automatic while miners wind down continues the loop seamlessly', () => {
+  it('a shaft can be tapped again as soon as its last miner has finished', () => {
+    const cycleMs = cfg.economy.shaftCycleMs();
+    // One miner (level 1) looping from t=0; switch off 90 % into its third cycle.
+    let state = runSimulation(
+      withMode(freshState(), 'auto'),
+      2 * cycleMs + 0.9 * cycleMs,
+      50,
+      cfg,
+    ).state;
+    const cycleEnd = 3 * cycleMs;
+    state = withMode(state, 'tap');
+    expect(tapUnit(state, MINE, { kind: 'shaft', index: 0 }, cfg).ok).toBe(false);
+    while (state.time < cycleEnd) {
+      expect(tapUnit(state, MINE, { kind: 'shaft', index: 0 }, cfg).ok).toBe(false);
+      state = runSimulation(state, 50, 50, cfg).state;
+    }
+    // The step that delivered the last load also ended the wind-down: no dead time.
+    expect(state.time - cycleEnd).toBeLessThan(50);
+    expect(mine(state).shafts[0]?.autoSince).toBeNull();
+    expect(tapUnit(state, MINE, { kind: 'shaft', index: 0 }, cfg).ok).toBe(true);
+  });
+
+  it('switching back to automatic during the wind-down: miners finish, then a fresh loop starts', () => {
     const cycleMs = cfg.economy.shaftCycleMs();
     const base = patchMine(withMode(freshState(), 'auto'), (m) => ({
       ...m,
-      shafts: m.shafts.map((s) => ({ ...s, level: 60 })),
+      shafts: m.shafts.map((s) => ({ ...s, level: 120 })),
     }));
+    const miners = cfg.economy.minerCount(120);
     const warm = runSimulation(base, 2 * cycleMs + 700, 50, cfg).state;
-    const steady = runSimulation(warm, 4 * cycleMs, 50, cfg).state;
+    const steady = runSimulation(warm, 6 * cycleMs, 50, cfg).state;
 
-    let toggled = runSimulation(withMode(warm, 'tap'), 300, 50, cfg).state;
-    expect(mine(toggled).shafts[0]?.autoUntil).not.toBeNull();
-    toggled = runSimulation(withMode(toggled, 'auto'), 4 * cycleMs - 300, 50, cfg).state;
+    let toggled = runSimulation(withMode(warm, 'tap'), 1500, 50, cfg).state;
+    const shaft = mine(toggled).shafts[0];
+    expect(shaft?.autoUntil).not.toBeNull();
+    const resting = Array.from({ length: miners }, (_, j) =>
+      shaft ? minerCycleStart(shaft, j, toggled.time, cycleMs) === null : false,
+    );
+    expect(resting.some(Boolean)).toBe(true); // someone already finished
+    expect(resting.every(Boolean)).toBe(false); // someone is still digging
+
+    toggled = runSimulation(withMode(toggled, 'auto'), 50, 50, cfg).state;
+    const after = mine(toggled).shafts[0];
+    // Miners who had finished stay at rest instead of jumping into the middle of a cycle.
+    resting.forEach((wasResting, j) => {
+      if (wasResting && after) expect(minerCycleStart(after, j, toggled.time, cycleMs)).toBeNull();
+    });
+
+    toggled = runSimulation(toggled, 6 * cycleMs - 1550, 50, cfg).state;
     expect(mine(toggled).shafts[0]?.autoUntil).toBeNull();
-    // A short detour to tap mode never creates ore; at most it loses cycles that began meanwhile.
-    const a = mine(steady).shafts[0]?.stored ?? D(0);
-    const b = mine(toggled).shafts[0]?.stored ?? D(0);
-    expect(b.lte(a)).toBe(true);
-    expect(b.gt(0)).toBe(true);
+    expect(mine(toggled).shafts[0]?.autoSince).not.toBeNull();
+    // A detour to tap mode never creates ore; it only costs the pause.
+    expect(oreInMine(toggled).lte(oreInMine(steady))).toBe(true);
+    expect(oreInMine(toggled).gt(oreInMine(warm))).toBe(true);
   });
 
   it('switching to automatic mode lets a running manual cycle finish first', () => {

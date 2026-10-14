@@ -581,7 +581,7 @@ h3 {
 }
 .unit-card .auto-badge {
   top: -9px;
-  left: -9px;
+  left: -5px; /* the elevator card sits 6 px from the screen edge */
 }
 .manager-slot .auto-badge {
   top: -7px;
