@@ -13,10 +13,11 @@ import type { Decimal } from '../core/BigNum';
 import type { Locale } from '../i18n/t';
 import type { Notation } from '../i18n/formatNumber';
 
-export const STATE_VERSION = 2;
+export const STATE_VERSION = 3;
 
+/** A unit of a mine. Elevators are numbered by zone (0 = the elevator that reaches the surface). */
 export type UnitRef =
-  { kind: 'shaft'; index: number } | { kind: 'elevator' } | { kind: 'logistics' };
+  { kind: 'shaft'; index: number } | { kind: 'elevator'; index: number } | { kind: 'logistics' };
 
 export interface ShaftState {
   level: number;
@@ -36,7 +37,10 @@ export interface ShaftState {
   manualCycleEndsAt: number | null;
 }
 
-/** down: surface → deepest shaft · rise: one shaft up · load: at a shaft · up: straight to the surface. */
+/**
+ * down: dock → deepest stop · rise: one stop up · load: at a stop · up: straight to the dock.
+ * Stops are local to the elevator's zone (see sim/zones.ts).
+ */
 export type ElevatorPhaseKind = 'idle' | 'down' | 'rise' | 'load' | 'up' | 'unload';
 
 export interface ElevatorPhase {
@@ -44,7 +48,7 @@ export interface ElevatorPhase {
   startAt: number;
   /** `Infinity` for the open-ended idle phase. */
   endAt: number;
-  /** Stop index the phase starts at (0 = surface dock, n = shaft n). */
+  /** Stop index the phase starts at (0 = dock, k = k-th shaft of the zone, last = station below). */
   from: number;
   /** Stop index the phase ends at. */
   to: number;
@@ -105,7 +109,13 @@ export interface MineState {
   /** Derinleştirme rank (Phase 2). */
   rank: number;
   shafts: ShaftState[];
-  elevator: ElevatorState;
+  /** One elevator per zone of `elevator.zoneSize` shafts; index 0 reaches the surface. */
+  elevators: ElevatorState[];
+  /**
+   * Transfer stations between zones: station s is filled by elevator s+1 and emptied by elevator s
+   * (always `elevators.length − 1` entries).
+   */
+  stations: Decimal[];
   logistics: LogisticsState;
   /** Ore waiting at the shaft head for the carriers. */
   surfaceStock: Decimal;

@@ -141,6 +141,9 @@ export class Game {
       case 'shaftUnlocked':
         this.bus.emit('shaftUnlocked', event);
         break;
+      case 'elevatorBuilt':
+        this.bus.emit('elevatorBuilt', event);
+        break;
       case 'barrierStarted':
         this.bus.emit('barrierStarted', event);
         break;

@@ -15,6 +15,9 @@ import { px } from './px';
 import { TapArea } from './TapArea';
 import { AutoBadge } from '../components/AutoBadge';
 
+/** Horizontal space kept free for the row's upgrade button (widest compact button + margin). */
+const ROW_UPGRADE_RESERVE_PX = 136;
+
 export function ShaftRow({
   state,
   layout,
@@ -79,7 +82,12 @@ export function ShaftRow({
       <button
         type="button"
         class="row-info"
-        style={{ left: L(layout.crateX + 52), top: L(layout.tunnelTop + 4) }}
+        style={{
+          left: L(layout.crateX + 52),
+          top: L(layout.tunnelTop + 4),
+          // Leave room for the upgrade button so long ore names wrap instead of hiding under it.
+          maxWidth: `calc(100% - ${L(layout.crateX + 52)} - ${ROW_UPGRADE_RESERVE_PX}px)`,
+        }}
         onClick={() => (selectedUnit.value = unit)}
         aria-label={[
           name,

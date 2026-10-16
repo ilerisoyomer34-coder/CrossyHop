@@ -1,14 +1,71 @@
 {
-  "source": "GDD 5.5 — continuously active, efficiency-focused player without managers, skills, boosts or prestige; barrier wait times excluded",
+  "source": "Floors 2\u201310: GDD 5.5. Floors 12\u201336: deep-mine curve tuned in 0.4.0 so the magma core takes about 3 hours (player's choice). Continuously active, efficiency-focused player without managers, skills, boosts or prestige; barrier wait times excluded",
   "targets": [
-    { "shaft": 2, "seconds": 40, "income": 30 },
-    { "shaft": 5, "seconds": 180, "income": 8330 },
-    { "shaft": 8, "seconds": 600, "income": 2.2e6 },
-    { "shaft": 10, "seconds": 2400, "income": 1.24e8 },
-    { "shaft": 12, "seconds": 9000, "income": 4.6e9 },
-    { "shaft": 14, "seconds": 39600, "income": 1.84e11 },
-    { "shaft": 15, "seconds": 111600, "income": 2e12 },
-    { "shaft": 17, "seconds": 561600, "income": 8.7e13 }
+    {
+      "shaft": 2,
+      "seconds": 40,
+      "income": 30
+    },
+    {
+      "shaft": 5,
+      "seconds": 180,
+      "income": 8330
+    },
+    {
+      "shaft": 8,
+      "seconds": 600,
+      "income": 2200000.0
+    },
+    {
+      "shaft": 10,
+      "seconds": 2400,
+      "income": 124000000.0
+    },
+    {
+      "shaft": 12,
+      "seconds": 2640,
+      "income": 3510000000.0
+    },
+    {
+      "shaft": 14,
+      "seconds": 3360,
+      "income": 66100000000.0
+    },
+    {
+      "shaft": 17,
+      "seconds": 4320,
+      "income": 5000000000000.0
+    },
+    {
+      "shaft": 20,
+      "seconds": 5280,
+      "income": 617000000000000.0
+    },
+    {
+      "shaft": 23,
+      "seconds": 6660,
+      "income": 5.71e16
+    },
+    {
+      "shaft": 26,
+      "seconds": 7740,
+      "income": 1.87e19
+    },
+    {
+      "shaft": 30,
+      "seconds": 8760,
+      "income": 1.8e22
+    },
+    {
+      "shaft": 33,
+      "seconds": 9660,
+      "income": 3.47e24
+    },
+    {
+      "shaft": 36,
+      "seconds": 10500,
+      "income": 1.16e27
+    }
   ],
   "tolerance": 0.3
 }

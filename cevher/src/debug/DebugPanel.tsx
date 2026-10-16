@@ -270,6 +270,17 @@ export function DebugPanel({ state }: { state: GameState }) {
           <span>{t('debug.flowElevatorReal')}</span>
           <span>{sci(flows.elevator)}</span>
         </div>
+        {flows.elevators.length > 1 &&
+          flows.elevators.map((f, z) => (
+            <div class="debug-kv" key={`elevator-${z}`}>
+              <span>
+                {t('debug.flowElevatorN', { n: z + 1 })} · {t('debug.flowZoneN', { n: z + 1 })}
+              </span>
+              <span>
+                {sci(f)} · {sci(flows.zones[z] ?? D(0))}
+              </span>
+            </div>
+          ))}
         <div class="debug-kv">
           <span>{t('debug.flowLogistics')}</span>
           <span>{sci(flows.logistics)}</span>

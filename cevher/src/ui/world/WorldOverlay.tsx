@@ -9,6 +9,7 @@ import { useRuntime } from '../runtime';
 import { BottomRow } from './BottomRow';
 import { px } from './px';
 import { ShaftRow } from './ShaftRow';
+import { StationRow } from './StationRow';
 import { SurfaceWidgets } from './SurfaceWidgets';
 
 export function WorldOverlay({
@@ -45,6 +46,9 @@ export function WorldOverlay({
       <SurfaceWidgets state={state} layout={layout} />
       {mine.shafts.map((shaft, index) => (
         <ShaftRow key={index} state={state} layout={layout} index={index} shaft={shaft} />
+      ))}
+      {mine.stations.map((_, station) => (
+        <StationRow key={`station-${station}`} state={state} layout={layout} station={station} />
       ))}
       <BottomRow state={state} layout={layout} />
       <div class="fx-layer" ref={fxRef} />

@@ -7,7 +7,7 @@ import { BuyModeSegmented } from '../components/BuyModeToggle';
 import { Icon, type IconName } from '../components/Icon';
 import { ProgressBar } from '../components/ProgressBar';
 import { UpgradeButton } from '../components/UpgradeButton';
-import { formatter, unitName } from '../format';
+import { elevatorCountOf, formatter, unitName } from '../format';
 import { useRuntime } from '../runtime';
 import { buyMode } from '../store';
 import { unitStats } from './unitStats';
@@ -38,7 +38,11 @@ export function UpgradePanel({
   const quote = quoteUpgrade(state, mineId, unit, buyMode.value, cfg);
   const nextLevel = quote.maxed ? null : quote.level + quote.count;
   const stats = unitStats(state, unit, nextLevel, cfg, fmt);
-  const isBottleneck = chainFlows(state, mineId, cfg).bottleneck === linkOf(unit);
+  const flows = chainFlows(state, mineId, cfg);
+  const isBottleneck =
+    flows.bottleneck === linkOf(unit) &&
+    (unit.kind !== 'elevator' || unit.index === flows.weakestElevator);
+  const name = unitName(unit, elevatorCountOf(state));
   const every =
     unit.kind === 'shaft'
       ? cfg.econ.shaft.milestoneEvery
@@ -53,14 +57,14 @@ export function UpgradePanel({
   const ore = unit.kind === 'shaft' ? oreForShaft(mineDef(cfg, mineId), unit.index + 1) : null;
 
   return (
-    <section class="panel" aria-label={unitName(unit)} data-testid="upgrade-panel">
+    <section class="panel" aria-label={name} data-testid="upgrade-panel">
       <header class="panel__header">
         <span class="panel__icon">
           <Icon name={ICONS[unit.kind]} size={26} />
         </span>
         <div class="panel__titles">
           <h2 class="panel__title">
-            {unitName(unit)}
+            {name}
             {ore && (
               <span class={`ore-chip ore-chip--${ore}`}>{t(`ore.${ore}` as 'ore.coal')}</span>
             )}

@@ -3,7 +3,8 @@
  * loaded and when the tab returns after a long hide.
  *
  * - Income: only automated links work while away. Per mine:
- *   min(automated shaft flow, automated elevator flow, automated logistics flow)
+ *   min(automated shaft flow, automated elevator flow, automated logistics flow), where the
+ *   elevators form a relay (an elevator without a manager stops the ore of every zone below it)
  *   × permanent multipliers × offline efficiency × min(elapsed, offline cap).
  *   A link without a manager makes the whole chain 0. The player's automatic play mode does not
  *   count: it only runs while the game is open (Phase 0 has no managers, so only the debug manager
@@ -17,6 +18,7 @@ import { getMine } from '../state/update';
 import { worksOffline } from './automation';
 import { mineDef, type GameConfig } from './GameConfig';
 import { incomeMultiplier } from './Multipliers';
+import { relayThroughput, zoneOfShaft, zoneView } from './zones';
 
 export interface OfflineReport {
   /** Real time the player was away, in ms (0 when the clock was rewound). */
@@ -48,18 +50,27 @@ export function automatedIncomePerSec(state: GameState, mineId: string, cfg: Gam
   const mine = getMine(state, mineId);
   const eco = cfg.economy;
   const scale = mineDef(cfg, mineId).mineScale;
-  let shafts = ZERO;
+  // Per zone: production of the offline-capable shafts and the flow of an offline-capable elevator.
+  const zones: Decimal[] = mine.elevators.map(() => ZERO);
   mine.shafts.forEach((shaft, i) => {
-    if (worksOffline(state, shaft))
-      shafts = shafts.add(eco.shaftProduction(i + 1, shaft.level, scale));
+    if (!worksOffline(state, shaft)) return;
+    const z = Math.min(zoneOfShaft(cfg, i), zones.length - 1);
+    zones[z] = (zones[z] ?? ZERO).add(eco.shaftProduction(i + 1, shaft.level, scale));
   });
-  const elevator = worksOffline(state, mine.elevator)
-    ? eco.elevatorRealFlow(mine.elevator.level, mine.shafts.length, scale)
-    : ZERO;
+  const flows = mine.elevators.map((elevator, z) =>
+    worksOffline(state, elevator)
+      ? eco.elevatorRealFlow(
+          elevator.level,
+          zoneView(cfg, mine, z).deepestStop,
+          scale * eco.elevatorZoneFlowScale(z),
+        )
+      : ZERO,
+  );
+  const elevators = relayThroughput(zones, flows).delivered;
   const logistics = worksOffline(state, mine.logistics)
     ? eco.logisticsFlow(mine.logistics.level, scale)
     : ZERO;
-  return dmin(dmin(shafts, elevator), logistics).mul(incomeMultiplier(state, mineId, cfg).total);
+  return dmin(elevators, logistics).mul(incomeMultiplier(state, mineId, cfg).total);
 }
 
 /** What the player earned between `awayFromMs` and `awayToMs` (wall clock, epoch ms). */

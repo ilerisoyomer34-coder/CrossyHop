@@ -8,13 +8,13 @@ import { AutoBadge } from '../components/AutoBadge';
 import { Icon } from '../components/Icon';
 import { ProgressBar } from '../components/ProgressBar';
 import { UpgradeButton } from '../components/UpgradeButton';
-import { formatter, unitName } from '../format';
+import { elevatorCountOf, formatter, unitName } from '../format';
 import { useRuntime } from '../runtime';
 import { selectedUnit } from '../store';
 import { px } from './px';
 import { TapArea } from './TapArea';
 
-function UnitCard({
+export function UnitCard({
   state,
   unit,
   level,
@@ -38,7 +38,11 @@ function UnitCard({
         type="button"
         class="unit-card__info"
         onClick={() => (selectedUnit.value = unit)}
-        aria-label={[unitName(unit), t('level.short', { level }), automated ? t('tap.auto') : '']
+        aria-label={[
+          unitName(unit, elevatorCountOf(state)),
+          t('level.short', { level }),
+          automated ? t('tap.auto') : '',
+        ]
           .filter(Boolean)
           .join(', ')}
       >
@@ -52,7 +56,7 @@ function UnitCard({
           </span>
         )}
         <span class="unit-card__text">
-          <span class="unit-card__name">{unitName(unit)}</span>
+          <span class="unit-card__name">{unitName(unit, elevatorCountOf(state))}</span>
           <span class="level-badge" data-testid={`${testId}-level`}>
             {t('level.short', { level })}
           </span>
@@ -74,18 +78,21 @@ export function SurfaceWidgets({ state, layout }: { state: GameState; layout: Wo
   const fmt = formatter(state.settings);
   const L = (v: number): string => px(layout, v);
   const half = layout.width / 2;
-  const elevatorIdle = mine.elevator.phase.kind === 'idle';
+  const elevator0 = mine.elevators[0];
+  const elevatorUnit = { kind: 'elevator' as const, index: 0 };
+  const elevatorIdle = (elevator0?.phase.kind ?? 'idle') === 'idle';
   const logisticsIdle = mine.logistics.carriers.every((c) => c.phase.kind === 'idle');
-  const anyOre = mine.shafts.some((s) => s.stored.gt(0));
-  const elevatorAuto = unitAutomated(state, mineId, { kind: 'elevator' });
+  const zone0 = mine.shafts.slice(0, cfg.econ.elevator.zoneSize);
+  const anyOre = zone0.some((s) => s.stored.gt(0)) || (mine.stations[0]?.gt(0) ?? false);
+  const elevatorAuto = unitAutomated(state, mineId, elevatorUnit);
   const logisticsAuto = unitAutomated(state, mineId, { kind: 'logistics' });
 
   return (
     <div class="surface-widgets">
       <UnitCard
         state={state}
-        unit={{ kind: 'elevator' }}
-        level={mine.elevator.level}
+        unit={elevatorUnit}
+        level={elevator0?.level ?? 1}
         every={cfg.econ.elevator.milestoneEvery}
         testId="elevator-card"
         showManagerSlot={layout.width >= 440}
@@ -114,7 +121,7 @@ export function SurfaceWidgets({ state, layout }: { state: GameState; layout: Wo
         automated={elevatorAuto}
         emphasize={elevatorIdle && anyOre}
         hintClass="tap-hint--elevator"
-        onTap={() => game.dispatch((s) => tapUnit(s, mineId, { kind: 'elevator' }, cfg))}
+        onTap={() => game.dispatch((s) => tapUnit(s, mineId, elevatorUnit, cfg))}
       />
       <TapArea
         label={t('tap.logisticsAria')}

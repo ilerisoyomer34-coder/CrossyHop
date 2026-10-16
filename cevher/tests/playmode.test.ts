@@ -12,7 +12,7 @@ import { minerCycleStart } from '../src/sim/ShaftSystem';
 import { runGreedyBot } from '../src/sim/bots/runBot';
 import { applyOffline, calculateOffline } from '../src/sim/OfflineCalculator';
 import { runSimulation } from '../src/sim/Simulation';
-import { cfg, freshState, MINE, mine, patchMine } from './helpers';
+import { MINE, cfg, elevatorOf, freshState, mine, patchMine } from './helpers';
 
 const HOUR = 3_600_000;
 
@@ -30,7 +30,7 @@ function midGame(): GameState {
 /** Ore anywhere in the chain plus cash from sales (sale multiplier is 1 in Phase 0). */
 function oreInMine(state: GameState): Decimal {
   const m = mine(state);
-  let total = m.cash.add(m.surfaceStock).add(m.elevator.load);
+  let total = m.cash.add(m.surfaceStock).add(elevatorOf(m).load);
   for (const s of m.shafts) total = total.add(s.stored);
   for (const c of m.logistics.carriers) total = total.add(c.load);
   return total;
@@ -40,7 +40,7 @@ function allIdle(state: GameState): boolean {
   const m = mine(state);
   return (
     m.shafts.every((s) => s.autoSince === null && s.manualCycleEndsAt === null) &&
-    m.elevator.phase.kind === 'idle' &&
+    elevatorOf(m).phase.kind === 'idle' &&
     m.logistics.carriers.every((c) => c.phase.kind === 'idle')
   );
 }
@@ -50,14 +50,14 @@ describe('play mode setting', () => {
     const state = freshState();
     expect(state.settings.playMode).toBe('tap');
     expect(unitAutomated(state, MINE, { kind: 'shaft', index: 0 })).toBe(false);
-    expect(unitAutomated(state, MINE, { kind: 'elevator' })).toBe(false);
+    expect(unitAutomated(state, MINE, { kind: 'elevator', index: 0 })).toBe(false);
     expect(unitAutomated(state, MINE, { kind: 'logistics' })).toBe(false);
   });
 
   it('automatic mode runs every unit while open, but not offline', () => {
     const state = withMode(freshState(), 'auto');
     const m = mine(state);
-    for (const unit of [m.shafts[0], m.elevator, m.logistics]) {
+    for (const unit of [m.shafts[0], elevatorOf(m), m.logistics]) {
       expect(unit && isAutomated(state, unit)).toBe(true);
       expect(unit && worksOffline(state, unit)).toBe(false);
     }
@@ -65,7 +65,7 @@ describe('play mode setting', () => {
 
   it('the debug manager simulation still counts as offline-capable', () => {
     const state = debugSetAutoRun(freshState(), true).state;
-    expect(worksOffline(state, mine(state).elevator)).toBe(true);
+    expect(worksOffline(state, elevatorOf(mine(state)))).toBe(true);
   });
 
   it('earns without a single tap in automatic mode', () => {
@@ -217,7 +217,7 @@ describe('play mode setting', () => {
 
   it('tapping an automated unit is refused (nothing to do)', () => {
     const state = withMode(freshState(), 'auto');
-    const r = tapUnit(state, MINE, { kind: 'elevator' }, cfg);
+    const r = tapUnit(state, MINE, { kind: 'elevator', index: 0 }, cfg);
     expect(r.ok).toBe(false);
   });
 });
@@ -242,10 +242,9 @@ describe('save schema v2 (play mode)', () => {
   const fixture = readFileSync(new URL('./fixtures/save-v1.txt', import.meta.url), 'utf8').trim();
 
   it('migrates a real v1 save from game 0.2.0 and keeps everything else', () => {
-    expect(STATE_VERSION).toBe(2);
     expect((JSON.parse(fixture) as { v: number }).v).toBe(1);
     const { state } = readSave(fixture, cfg);
-    expect(state.version).toBe(2);
+    expect(state.version).toBe(STATE_VERSION);
     expect(state.settings).toEqual({ locale: 'en', notation: 'scientific', playMode: 'tap' });
     expect(mine(state).shafts).toHaveLength(5);
     expect(mine(state).shafts.every((sh) => sh.autoUntil === null)).toBe(true);
@@ -258,10 +257,10 @@ describe('save schema v2 (play mode)', () => {
     expect(mine(later).clearedBarriers).toContain(5);
   });
 
-  it('writes v2 and round-trips the play mode', () => {
+  it('writes the current version and round-trips the play mode', () => {
     const state = withMode(freshState(), 'auto');
     const raw = writeSave(state, 7);
-    expect((JSON.parse(raw) as { v: number }).v).toBe(2);
+    expect((JSON.parse(raw) as { v: number }).v).toBe(STATE_VERSION);
     expect(readSave(raw, cfg).state.settings.playMode).toBe('auto');
   });
 

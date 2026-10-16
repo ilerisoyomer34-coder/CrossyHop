@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { D } from '../src/core/BigNum';
 import { newShaft } from '../src/state/factory';
 import { bestShaftUpgrade, bottleneckOf, chainFlows } from '../src/state/selectors';
-import { cfg, expectClose, freshState, MINE, patchMine } from './helpers';
+import { MINE, cfg, elevatorOf, expectClose, freshState, patchMine } from './helpers';
 
 describe('bottleneckOf', () => {
   it('picks the smallest link', () => {
@@ -40,7 +40,7 @@ describe('chainFlows on game states', () => {
     // Elevator upgraded beyond logistics → logistics is next.
     state = patchMine(state, (m) => ({
       ...m,
-      elevator: { ...m.elevator, level: 300 },
+      elevators: [{ ...elevatorOf(m), level: 300 }, ...m.elevators.slice(1)],
       logistics: { ...m.logistics, level: 20 },
     }));
     expect(chainFlows(state, MINE, cfg).bottleneck).toBe('logistics');
@@ -49,7 +49,7 @@ describe('chainFlows on game states', () => {
   it('uses the real (depth dependent) elevator flow', () => {
     const shallow = patchMine(freshState(), (m) => ({
       ...m,
-      elevator: { ...m.elevator, level: 10 },
+      elevators: [{ ...elevatorOf(m), level: 10 }, ...m.elevators.slice(1)],
     }));
     const deep = patchMine(shallow, (m) => ({
       ...m,

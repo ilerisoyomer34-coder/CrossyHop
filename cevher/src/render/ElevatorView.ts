@@ -1,8 +1,11 @@
-/** Elevator cage, cable and headframe pulley; position is derived from the elevator phase. */
+/**
+ * One elevator: cage, cable and (for the surface elevator) the headframe pulley; deeper zone
+ * elevators hang from the winch drawn by their transfer station. Position comes from the phase.
+ */
 import { Container, Graphics, Sprite } from 'pixi.js';
 import type { ElevatorPhase } from '../state/GameState';
 import { PALETTE, shade } from './colors';
-import { elevatorStopY, type WorldLayout } from './layout';
+import { elevatorCableTop, elevatorStopY, type WorldLayout } from './layout';
 import { easeInOut, PhaseTracker, phaseProgress } from './PhaseTracker';
 import type { PlaceholderArt } from './placeholders/PlaceholderArt';
 
@@ -21,7 +24,10 @@ export class ElevatorView {
   private pulleyAngle = 0;
   private layoutRef: WorldLayout | null = null;
 
-  constructor(art: PlaceholderArt) {
+  constructor(
+    art: PlaceholderArt,
+    readonly zone: number,
+  ) {
     this.cable = new Sprite(art.get('px'));
     this.cable.tint = 0x2b2b30;
     this.operator = new Sprite(art.get('operator'));
@@ -30,7 +36,9 @@ export class ElevatorView {
     this.ore.anchor.set(0.5, 1);
     this.ore.tint = 0x3a3640;
     this.cage.addChild(this.ore, this.operator, this.cageFrame);
-    this.container.addChild(this.cable, this.cage, this.pulley);
+    this.container.addChild(this.cable, this.cage);
+    // Only the surface elevator hangs from the headframe pulley.
+    if (zone === 0) this.container.addChild(this.pulley);
   }
 
   layout(layout: WorldLayout): void {
@@ -86,8 +94,8 @@ export class ElevatorView {
   ): void {
     this.tracker.observe(phase);
     const active = this.tracker.sample(time) ?? phase;
-    const fromY = elevatorStopY(layout, active.from);
-    const toY = elevatorStopY(layout, active.to);
+    const fromY = elevatorStopY(layout, this.zone, active.from);
+    const toY = elevatorStopY(layout, this.zone, active.to);
     let progress = phaseProgress(active, time);
     if (active.kind === 'down' || active.kind === 'up') progress = easeInOut(progress);
     const y = fromY + (toY - fromY) * progress;
@@ -101,7 +109,7 @@ export class ElevatorView {
     this.ore.visible = loadFill > 0;
     this.ore.scale.y = 0.4 + 0.6 * loadFill;
 
-    const cableTop = layout.headframeTop + 8;
+    const cableTop = elevatorCableTop(layout, this.zone);
     const cableBottom = y - layout.cageHeight - 6;
     this.cable.position.set(x - 1, cableTop);
     this.cable.width = 2;

@@ -10,7 +10,7 @@ import {
   calculateOffline,
 } from '../src/sim/OfflineCalculator';
 import { runSimulation, stepSimulation } from '../src/sim/Simulation';
-import { cfg, expectClose, freshState, MINE, mine, patchMine } from './helpers';
+import { MINE, cfg, elevatorOf, expectClose, freshState, mine, patchMine } from './helpers';
 
 const HOUR = 3_600_000;
 const T0 = 1_700_000_000_000; // arbitrary wall-clock origin
@@ -72,7 +72,10 @@ describe('offline income (GDD 5.7)', () => {
       logistics: { ...m.logistics, managerId: 'test' },
     }));
     expect(calculateOffline(state, T0, T0 + HOUR, cfg).totalEarned.eq(0)).toBe(true);
-    state = patchMine(state, (m) => ({ ...m, elevator: { ...m.elevator, managerId: 'test' } }));
+    state = patchMine(state, (m) => ({
+      ...m,
+      elevators: [{ ...elevatorOf(m), managerId: 'test' }, ...m.elevators.slice(1)],
+    }));
     expect(calculateOffline(state, T0, T0 + HOUR, cfg).totalEarned.gt(0)).toBe(true);
   });
 

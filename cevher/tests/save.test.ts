@@ -68,7 +68,7 @@ describe('save round-trip', () => {
     const { state: loaded, savedAt } = readSave(writeSave(state, 5000), cfg);
     expect(savedAt).toBe(5000);
     expect(snapshot(loaded)).toBe(snapshot({ ...state, lastSavedAt: 5000 }));
-    expect(loaded.mines[loaded.activeMineId]?.elevator.phase.endAt).toBe(Infinity);
+    expect(loaded.mines[loaded.activeMineId]?.elevators[0]?.phase.endAt).toBe(Infinity);
   });
 
   it('restores a played state and the simulation continues identically', () => {
@@ -155,7 +155,7 @@ describe('corrupt and invalid saves', () => {
     [
       'unknown phase',
       (d: Record<string, unknown>) =>
-        setPath(d, ['mines', MINE_ID, 'elevator', 'phase', 'kind'], 'teleport'),
+        setPath(d, ['mines', MINE_ID, 'elevators', 0, 'phase', 'kind'], 'teleport'),
     ],
     ['missing time', (d: Record<string, unknown>) => setPath(d, ['time'], undefined)],
     ['unknown locale', (d: Record<string, unknown>) => setPath(d, ['settings', 'locale'], 'xx')],
@@ -173,7 +173,8 @@ describe('corrupt and invalid saves', () => {
     ],
     [
       'elevator stop below the mine',
-      (d: Record<string, unknown>) => setPath(d, ['mines', MINE_ID, 'elevator', 'phase', 'to'], 7),
+      (d: Record<string, unknown>) =>
+        setPath(d, ['mines', MINE_ID, 'elevators', 0, 'phase', 'to'], 7),
     ],
   ])('rejects %s', (_name, mutate) => {
     const data = savedData(freshState());

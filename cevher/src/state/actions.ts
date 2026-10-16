@@ -7,8 +7,9 @@ import { D, ZERO, type Decimal } from '../core/BigNum';
 import { startTrip } from '../sim/ElevatorSystem';
 import { barrierAfter, defaultConfig, mineDef, type GameConfig } from '../sim/GameConfig';
 import { dispatchIdleCarriers } from '../sim/LogisticsSystem';
+import { zoneCount, zoneView } from '../sim/zones';
 import type { GameEvent } from './events';
-import { idleCarrier, newShaft } from './factory';
+import { idleCarrier, idleElevator, newShaft } from './factory';
 import {
   FLAG_DEBUG_AUTORUN,
   type GameState,
@@ -42,6 +43,32 @@ function countTap(state: GameState): GameState {
   return { ...state, stats: { ...state.stats, taps: state.stats.taps + 1 } };
 }
 
+/**
+ * Builds the elevators (and transfer stations) the open shafts need: one elevator per zone. New
+ * elevators start idle at level 1. Returns the indices of the elevators that were built.
+ */
+function ensureElevators(
+  mine: MineState,
+  cfg: GameConfig,
+  at: number,
+): { mine: MineState; built: number[] } {
+  const wanted = zoneCount(cfg, mine.shafts.length);
+  if (mine.elevators.length >= wanted) return { mine, built: [] };
+  const built: number[] = [];
+  const elevators = [...mine.elevators];
+  const stations = [...mine.stations];
+  while (elevators.length < wanted) {
+    built.push(elevators.length);
+    elevators.push(idleElevator(1, at));
+    stations.push(ZERO);
+  }
+  return { mine: { ...mine, elevators, stations }, built };
+}
+
+function elevatorBuiltEvents(mineId: string, built: number[]): GameEvent[] {
+  return built.map((index) => ({ type: 'elevatorBuilt' as const, mineId, index }));
+}
+
 // ------------------------------------------------------------------ manual operation
 
 /** Starts one work cycle of a unit that has no manager (GDD 3: elle çalıştırma). */
@@ -71,9 +98,13 @@ export function tapUnit(
       return success(countTap(withMine(state, { ...mine, shafts })), [event]);
     }
     case 'elevator': {
-      const elevator = startTrip(eco, mine.elevator, mine.shafts.length, now);
+      const current = mine.elevators[unit.index];
+      if (!current) return failure(state, 'invalid');
+      const view = zoneView(cfg, mine, unit.index);
+      const elevator = startTrip(eco, current, view.deepestStop, now);
       if (!elevator) return failure(state, 'busy');
-      return success(countTap(withMine(state, { ...mine, elevator })), [event]);
+      const elevators = replaceAt(mine.elevators, unit.index, elevator);
+      return success(countTap(withMine(state, { ...mine, elevators })), [event]);
     }
     case 'logistics': {
       const carriers = dispatchIdleCarriers(eco, mine.logistics.carriers, now);
@@ -95,8 +126,14 @@ function setUnitLevel(mine: MineState, unit: UnitRef, level: number, cfg: GameCo
       if (!shaft) return mine;
       return { ...mine, shafts: replaceAt(mine.shafts, unit.index, { ...shaft, level }) };
     }
-    case 'elevator':
-      return { ...mine, elevator: { ...mine.elevator, level } };
+    case 'elevator': {
+      const elevator = mine.elevators[unit.index];
+      if (!elevator) return mine;
+      return {
+        ...mine,
+        elevators: replaceAt(mine.elevators, unit.index, { ...elevator, level }),
+      };
+    }
     case 'logistics': {
       const wanted = cfg.economy.carrierCount(level);
       let carriers = mine.logistics.carriers;
@@ -122,6 +159,7 @@ export function buyUnitLevels(
   if (!Number.isInteger(count) || count < 1) return failure(state, 'invalid');
   const mine = getMine(state, mineId);
   if (unit.kind === 'shaft' && !mine.shafts[unit.index]) return failure(state, 'invalid');
+  if (unit.kind === 'elevator' && !mine.elevators[unit.index]) return failure(state, 'invalid');
   const u = unitEconomy(mine, unit, cfg);
   if (u.level + count > u.maxLevel) return failure(state, 'maxLevel');
   const cost = cfg.economy.bulkCost(u.curve, u.level, count);
@@ -162,8 +200,9 @@ export function buyElevatorLevels(
   mineId: string,
   count: number,
   cfg: GameConfig = defaultConfig,
+  index = 0,
 ): ActionResult {
-  return buyUnitLevels(state, mineId, { kind: 'elevator' }, count, cfg);
+  return buyUnitLevels(state, mineId, { kind: 'elevator', index }, count, cfg);
 }
 
 export function buyLogisticsLevels(
@@ -201,14 +240,20 @@ export function unlockNextShaft(
   if (quote.status !== 'available') return failure(state, 'blocked');
   if (!quote.affordable) return failure(state, 'insufficientCash');
   const mine = getMine(state, mineId);
-  const next: MineState = {
-    ...mine,
-    cash: mine.cash.sub(quote.cost),
-    shafts: [...mine.shafts, newShaft()],
-    shaftUnlockedAt: [...mine.shaftUnlockedAt, state.time],
-  };
+  // The first shaft of a new zone comes with that zone's elevator and transfer station.
+  const { mine: next, built } = ensureElevators(
+    {
+      ...mine,
+      cash: mine.cash.sub(quote.cost),
+      shafts: [...mine.shafts, newShaft()],
+      shaftUnlockedAt: [...mine.shaftUnlockedAt, state.time],
+    },
+    cfg,
+    state.time,
+  );
   return success(withMine(state, next), [
     { type: 'shaftUnlocked', mineId, index: mine.shafts.length, cost: quote.cost },
+    ...elevatorBuiltEvents(mineId, built),
   ]);
 }
 
@@ -276,23 +321,27 @@ export function debugUnlockAllShafts(
   const missing = def.shaftCount - mine.shafts.length;
   if (missing <= 0) return failure(state, 'maxShafts');
   const cleared = cfg.econ.barriers.map((b) => b.afterShaft).filter((n) => n < def.shaftCount);
-  const next: MineState = {
-    ...mine,
-    shafts: [...mine.shafts, ...Array.from({ length: missing }, () => newShaft())],
-    shaftUnlockedAt: [
-      ...mine.shaftUnlockedAt,
-      ...Array.from({ length: missing }, () => state.time),
-    ],
-    clearedBarriers: [...new Set([...mine.clearedBarriers, ...cleared])],
-    barrier: null,
-  };
+  const { mine: next, built } = ensureElevators(
+    {
+      ...mine,
+      shafts: [...mine.shafts, ...Array.from({ length: missing }, () => newShaft())],
+      shaftUnlockedAt: [
+        ...mine.shaftUnlockedAt,
+        ...Array.from({ length: missing }, () => state.time),
+      ],
+      clearedBarriers: [...new Set([...mine.clearedBarriers, ...cleared])],
+      barrier: null,
+    },
+    cfg,
+    state.time,
+  );
   const events: GameEvent[] = Array.from({ length: missing }, (_, k) => ({
     type: 'shaftUnlocked' as const,
     mineId,
     index: mine.shafts.length + k,
     cost: ZERO,
   }));
-  return success(withMine(state, next), events);
+  return success(withMine(state, next), [...events, ...elevatorBuiltEvents(mineId, built)]);
 }
 
 export function debugFinishBarrier(

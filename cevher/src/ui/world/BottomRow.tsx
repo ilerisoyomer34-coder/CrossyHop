@@ -36,7 +36,13 @@ export function BottomRow({ state, layout }: { state: GameState; layout: WorldLa
           {t('shaft.unlock')}
         </span>
         <span class="unlock-btn__sub">
-          {t('shaft.unlockSub', { n: quote.shaftNumber, ore: oreName })}
+          {quote.newElevator !== null
+            ? t('shaft.unlockSubElevator', {
+                n: quote.shaftNumber,
+                ore: oreName,
+                e: quote.newElevator + 1,
+              })
+            : t('shaft.unlockSub', { n: quote.shaftNumber, ore: oreName })}
         </span>
         <span class="unlock-btn__cost">
           <Icon name="coin" size={18} />
@@ -102,6 +108,7 @@ export function BottomRow({ state, layout }: { state: GameState; layout: WorldLa
   return (
     <div
       class="bottom-row"
+      data-testid="bottom-row"
       style={{ top: L(bottomRowTop(layout) + 18), height: L(layout.bottomRowHeight - 30) }}
     >
       {content}

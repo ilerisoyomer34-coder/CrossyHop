@@ -12,6 +12,8 @@ export interface GameEventMap {
   levelsBought: { mineId: string; unit: UnitRef; from: number; to: number; cost: Decimal };
   milestoneReached: { mineId: string; unit: UnitRef; level: number; multiplier: number };
   shaftUnlocked: { mineId: string; index: number; cost: Decimal };
+  /** A new zone elevator (and its transfer station) was built; `index` is the elevator index. */
+  elevatorBuilt: { mineId: string; index: number };
   barrierStarted: { mineId: string; afterShaft: number; endsAt: number };
   barrierCleared: { mineId: string; afterShaft: number };
   unitStarted: { mineId: string; unit: UnitRef };
