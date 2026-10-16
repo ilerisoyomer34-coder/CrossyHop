@@ -2,7 +2,7 @@
 import type { Decimal, DecimalSource } from '../core/BigNum';
 import { formatNumber, formatPlain, type Rounding } from '../i18n/formatNumber';
 import { t } from '../i18n/t';
-import type { Settings, UnitRef } from '../state/GameState';
+import type { GameState, Settings, UnitRef } from '../state/GameState';
 
 export interface Formatter {
   num(value: DecimalSource, rounding?: Rounding): string;
@@ -27,12 +27,19 @@ export function formatter(settings: Settings): Formatter {
   };
 }
 
-export function unitName(unit: UnitRef): string {
+/** Number of elevators of the active mine (elevators are numbered once there is more than one). */
+export function elevatorCountOf(state: GameState): number {
+  return state.mines[state.activeMineId]?.elevators.length ?? 1;
+}
+
+export function unitName(unit: UnitRef, elevatorCount = 1): string {
   switch (unit.kind) {
     case 'shaft':
       return t('shaft.name', { n: unit.index + 1 });
     case 'elevator':
-      return t('elevator.name');
+      return elevatorCount > 1 || unit.index > 0
+        ? t('elevator.nameN', { n: unit.index + 1 })
+        : t('elevator.name');
     case 'logistics':
       return t('logistics.name');
   }

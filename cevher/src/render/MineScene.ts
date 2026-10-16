@@ -7,7 +7,8 @@ import { Application, Container } from 'pixi.js';
 // CSP-safe shader/uniform code paths (no `new Function`): needed for strict Content-Security-Policy
 // hosts such as embedded web views, Capacitor builds and sandboxed previews.
 import 'pixi.js/unsafe-eval';
-import { Decimal, dmin } from '../core/BigNum';
+import { Decimal, dmin, ZERO } from '../core/BigNum';
+import { zoneElevatorCapacity } from '../sim/ElevatorSystem';
 import type { GameState, MineState } from '../state/GameState';
 import { getMine } from '../state/update';
 import { quoteUnlock } from '../state/selectors';
@@ -15,10 +16,11 @@ import { mineDef, oreForShaft, regionDef, type GameConfig } from '../sim/GameCon
 import { BottomView } from './BottomView';
 import { hexToNumber, PALETTE, sampleGradient } from './colors';
 import { ElevatorView } from './ElevatorView';
-import { bottomRowTop, rowTop, type WorldLayout } from './layout';
+import { bottomRowTop, rowTop, stationTop, type WorldLayout } from './layout';
 import { LogisticsView } from './LogisticsView';
 import { PlaceholderArt } from './placeholders/PlaceholderArt';
 import { ShaftView, type ShaftVisualParams } from './ShaftView';
+import { StationView } from './StationView';
 import { SurfaceView } from './SurfaceView';
 
 export interface SceneOptions {
@@ -34,10 +36,13 @@ export class MineScene {
   readonly world = new Container();
   private readonly art: PlaceholderArt;
   private readonly surface: SurfaceView;
-  private readonly elevator: ElevatorView;
+  private readonly elevators: ElevatorView[] = [];
+  private readonly stations: StationView[] = [];
   private readonly logistics: LogisticsView;
   private readonly bottom: BottomView;
   private readonly shaftLayer = new Container();
+  private readonly stationLayer = new Container();
+  private readonly elevatorLayer = new Container();
   private readonly shafts: ShaftView[] = [];
   private layoutRef: WorldLayout | null = null;
   private readonly visualParams: ShaftVisualParams[] = [];
@@ -51,15 +56,15 @@ export class MineScene {
     const mine = mineDef(opts.cfg, opts.mineId);
     const region = regionDef(opts.cfg, mine.regionId);
     this.surface = new SurfaceView(this.art, region);
-    this.elevator = new ElevatorView(this.art);
     this.logistics = new LogisticsView(this.art);
     this.bottom = new BottomView(this.art);
     this.world.addChild(
       this.surface.container,
       this.shaftLayer,
+      this.stationLayer,
       this.bottom.container,
       this.logistics.container,
-      this.elevator.container,
+      this.elevatorLayer,
     );
     app.stage.addChild(this.world);
 
@@ -120,10 +125,29 @@ export class MineScene {
       this.shaftLayer.addChild(view.container);
     }
     while (this.shafts.length > mine.shafts.length) this.shafts.pop()?.destroy();
+    while (this.elevators.length < mine.elevators.length) {
+      const view = new ElevatorView(this.art, this.elevators.length);
+      view.layout(layout);
+      this.elevators.push(view);
+      this.elevatorLayer.addChild(view.container);
+    }
+    while (this.elevators.length > mine.elevators.length) this.elevators.pop()?.destroy();
+    while (this.stations.length < mine.stations.length) {
+      const view = new StationView(this.art, this.stations.length);
+      this.stations.push(view);
+      this.stationLayer.addChild(view.container);
+    }
+    while (this.stations.length > mine.stations.length) this.stations.pop()?.destroy();
     if (layoutChanged) {
       this.surface.layout(layout);
-      this.elevator.layout(layout);
+      for (const view of this.elevators) view.layout(layout);
     }
+    this.stations.forEach((view, s) => {
+      // The station sits right below the last shaft of zone s.
+      const lastShaft = (s + 1) * layout.zoneSize - 1;
+      const params = this.visualParams[Math.min(lastShaft, this.visualParams.length - 1)];
+      view.layout(layout, params?.rockColor ?? PALETTE.slate, params?.oreColor ?? 0x555555);
+    });
     this.shafts.forEach((view, i) => {
       const params = this.visualParams[i] ?? this.visualParams[this.visualParams.length - 1];
       if (params) view.layout(layout, params);
@@ -194,14 +218,29 @@ export class MineScene {
     this.bottom.container.visible = bottomTop < viewBottom;
     this.bottom.update(time, reducedMotion);
 
-    const capacity = eco.elevatorCapacity(mine.elevator.level, mineScale);
-    this.elevator.update(
-      mine.elevator.phase,
-      time,
-      layout,
-      fillRatio(mine.elevator.load, capacity),
-      reducedMotion,
-    );
+    this.elevators.forEach((view, z) => {
+      const elevator = mine.elevators[z];
+      if (!elevator) return;
+      // Cull an elevator whose whole segment (dock to deepest stop) is off screen.
+      const top = z === 0 ? 0 : stationTop(layout, z - 1);
+      const bottom =
+        z < mine.elevators.length - 1 ? stationTop(layout, z) + layout.stationHeight : bottomTop;
+      const visible = bottom > viewTop && top < viewBottom;
+      view.container.visible = visible;
+      if (!visible) return;
+      const capacity = zoneElevatorCapacity(cfg, mine.id, z, elevator.level);
+      view.update(elevator.phase, time, layout, fillRatio(elevator.load, capacity), reducedMotion);
+    });
+    this.stations.forEach((view, s) => {
+      const top = stationTop(layout, s);
+      const visible = top + layout.stationHeight > viewTop && top < viewBottom;
+      view.container.visible = visible;
+      if (!visible) return;
+      const below = mine.elevators[s + 1];
+      const capacity = below ? zoneElevatorCapacity(cfg, mine.id, s + 1, below.level) : ZERO;
+      const moving = below && below.phase.kind !== 'idle' && below.phase.kind !== 'load';
+      view.update(fillRatio(mine.stations[s] ?? ZERO, capacity), moving ? 0.12 : 0, reducedMotion);
+    });
     this.logistics.container.visible = surfaceVisible;
     if (surfaceVisible) this.logistics.update(mine.logistics.carriers, time, layout);
 

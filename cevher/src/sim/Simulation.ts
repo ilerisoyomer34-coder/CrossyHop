@@ -9,7 +9,7 @@
 import type { GameEvent } from '../state/events';
 import type { GameState, MineState } from '../state/GameState';
 import { updateBarrier } from './BarrierSystem';
-import { updateElevator } from './ElevatorSystem';
+import { updateElevators } from './ElevatorSystem';
 import { defaultConfig, type GameConfig } from './GameConfig';
 import { updateLogistics } from './LogisticsSystem';
 import { updateShafts } from './ShaftSystem';
@@ -33,7 +33,7 @@ export function stepSimulation(
     // (Phase 2) boosts · (Phase 1) manager skill timers · (Phase 2) region rules
     mine = updateBarrier(mine, ctx);
     mine = updateShafts(mine, ctx);
-    mine = updateElevator(mine, ctx);
+    mine = updateElevators(mine, ctx);
     mine = updateLogistics(mine, ctx);
     // (Phase 2) refinery · contracts / achievements (throttled to 1 Hz)
     if (mine !== original) {

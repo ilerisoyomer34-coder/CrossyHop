@@ -4,7 +4,7 @@ import { vibrate } from '../../platform/haptics';
 import { buyWithMode } from '../../state/actions';
 import type { GameState, UnitRef } from '../../state/GameState';
 import { quoteUpgrade } from '../../state/selectors';
-import { formatter, unitName } from '../format';
+import { elevatorCountOf, formatter, unitName } from '../format';
 import { useHoldRepeat } from '../hooks/useHoldRepeat';
 import { useRuntime } from '../runtime';
 import { buyMode } from '../store';
@@ -36,7 +36,11 @@ export function UpgradeButton({
 
   const label = quote.maxed
     ? t('upgrade.maxed')
-    : t('upgrade.aria', { unit: unitName(unit), count: quote.count, cost: fmt.cost(quote.cost) });
+    : t('upgrade.aria', {
+        unit: unitName(unit, elevatorCountOf(state)),
+        count: quote.count,
+        cost: fmt.cost(quote.cost),
+      });
 
   return (
     <button

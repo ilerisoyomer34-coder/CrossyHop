@@ -31,6 +31,14 @@ function mapShafts(data: SaveData, patch: (shaft: SaveData) => SaveData): SaveDa
   return { ...data, mines: next };
 }
 
+/** Applies `patch` to every mine (raw save data). */
+function mapMines(data: SaveData, patch: (mine: SaveData) => SaveData): SaveData {
+  const mines = asRecord(data.mines);
+  const next: SaveData = {};
+  for (const [id, raw] of Object.entries(mines)) next[id] = patch(asRecord(raw));
+  return { ...data, mines: next };
+}
+
 export const MIGRATIONS: Readonly<Record<number, Migration>> = {
   /**
    * v1 → v2 (game 0.3.0): play mode setting (existing players keep tapping) and the shaft's
@@ -41,6 +49,15 @@ export const MIGRATIONS: Readonly<Record<number, Migration>> = {
       ...shaft,
       autoUntil: null,
     })),
+  /**
+   * v2 → v3 (game 0.4.0): relay elevators. The single elevator becomes elevator 0; saves before
+   * 0.4.0 have at most 10 shafts (one zone), so there are no transfer stations yet.
+   */
+  2: (data) =>
+    mapMines(data, (mine) => {
+      const { elevator, ...rest } = mine;
+      return { ...rest, elevators: elevator === undefined ? [] : [elevator], stations: [] };
+    }),
 };
 
 export function migrate(

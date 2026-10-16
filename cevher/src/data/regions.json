@@ -16,11 +16,67 @@
         "wood": "#9C6B3F",
         "woodDark": "#6E4527"
       },
-      "depthGradient": ["#8C7A62", "#5E5A6E", "#3A3850"],
+      "depthGradient": [
+        "#8C7A62",
+        "#6F6862",
+        "#5E5A6E",
+        "#47445E",
+        "#3A3850",
+        "#2E2A46",
+        "#2A223A",
+        "#3A2032",
+        "#562422",
+        "#7A2E18"
+      ],
       "ores": {
-        "coal": { "color": "#2E2C33", "glint": "#9A98A8" },
-        "copper": { "color": "#C2673A", "glint": "#F6C29A" },
-        "iron": { "color": "#8A6656", "glint": "#E2CBBB" }
+        "coal": {
+          "color": "#2E2C33",
+          "glint": "#9A98A8"
+        },
+        "copper": {
+          "color": "#C2673A",
+          "glint": "#F6C29A"
+        },
+        "iron": {
+          "color": "#8A6656",
+          "glint": "#E2CBBB"
+        },
+        "gold": {
+          "color": "#E0B23A",
+          "glint": "#FFF3B0"
+        },
+        "diamond": {
+          "color": "#BFE9F5",
+          "glint": "#FFFFFF"
+        },
+        "ruby": {
+          "color": "#B3123A",
+          "glint": "#FF8FA8"
+        },
+        "emerald": {
+          "color": "#1E9E5A",
+          "glint": "#A6F5C8"
+        },
+        "sapphire": {
+          "color": "#1F4FB8",
+          "glint": "#9DB8FF"
+        },
+        "opal": {
+          "color": "#CFE3E6",
+          "glint": "#FFD6F5"
+        },
+        "blackOpal": {
+          "color": "#1C1830",
+          "glint": "#5CF2D6"
+        },
+        "fireStone": {
+          "color": "#E2551B",
+          "glint": "#FFD27A"
+        },
+        "magma": {
+          "color": "#FF6A00",
+          "glint": "#FFE08A"
+        }
       }
     }
   ]

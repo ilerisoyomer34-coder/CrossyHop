@@ -27,7 +27,11 @@ export function BottleneckChain({ state }: { state: GameState }) {
     <nav class="chain" aria-label={t('chain.label')} id="production-chain">
       {CHAIN_ORDER.map((link, i) => {
         const isBottleneck = flows.bottleneck === link;
-        const name = t(META[link].label);
+        // With several elevators, the elevator link names the one to upgrade.
+        const name =
+          link === 'elevator' && flows.elevators.length > 1
+            ? t('elevator.nameN', { n: flows.weakestElevator + 1 })
+            : t(META[link].label);
         const value = fmt.rate(flows[link]);
         return (
           <Fragment key={link}>

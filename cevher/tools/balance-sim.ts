@@ -7,12 +7,14 @@
  *
  *   npm run sim                      # greedy bot, manual tapping, up to shaft 10
  *   npm run sim -- --until=10 --mode=auto
+ *   npm run sim -- --until=36 --mode=auto --barriers=0   # whole mine, blast waits skipped
  *
  * Phase 2 adds the balanced / casual strategies, multi-day runs with offline time and CSV output.
  */
 import targets from '../src/data/progressionTargets.json';
 import { formatNumber } from '../src/i18n/formatNumber';
-import { defaultConfig } from '../src/sim/GameConfig';
+import { economyConfig } from '../src/data/config';
+import { createGameConfig, defaultConfig } from '../src/sim/GameConfig';
 import { runGreedyBot } from '../src/sim/bots/runBot';
 
 function arg(name: string, fallback: string): string {
@@ -30,9 +32,24 @@ function fmtTime(sec: number): string {
 const until = Number(arg('until', '10'));
 const mode = arg('mode', 'tap') === 'auto' ? 'auto' : 'tap';
 const maxSeconds = Number(arg('max-hours', '6')) * 3600;
+// --barriers=0 skips the blast waits (the targets exclude them; blasts also run while closed).
+const withBarriers = arg('barriers', '1') !== '0';
+const cfg = withBarriers
+  ? defaultConfig
+  : createGameConfig({
+      ...economyConfig,
+      barriers: economyConfig.barriers.map((b) => ({ ...b, durationSec: 0.05 })),
+    });
+// Long runs step coarser (the simulation is exact for any step size; the bot reacts per step).
+const fast = until > 12;
 
 const started = Date.now();
-const result = runGreedyBot(defaultConfig, { untilShafts: until, maxSeconds, mode });
+const result = runGreedyBot(cfg, {
+  untilShafts: until,
+  maxSeconds,
+  mode,
+  ...(fast ? { stepMs: 250, botEverySteps: 1 } : {}),
+});
 const elapsed = ((Date.now() - started) / 1000).toFixed(1);
 
 console.log(`\nCEVHER denge simülatörü — strateji: açgözlü (geri ödeme), mod: ${mode}`);

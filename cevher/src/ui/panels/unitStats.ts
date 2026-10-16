@@ -3,6 +3,7 @@ import type { Decimal } from '../../core/BigNum';
 import type { TKey } from '../../i18n/t';
 import type { GameConfig } from '../../sim/GameConfig';
 import { mineDef } from '../../sim/GameConfig';
+import { zoneView } from '../../sim/zones';
 import type { GameState, UnitRef } from '../../state/GameState';
 import { getMine } from '../../state/update';
 import type { Formatter } from '../format';
@@ -63,11 +64,12 @@ export function unitStats(
       break;
     }
     case 'elevator': {
-      const L = mine.elevator.level;
+      const L = mine.elevators[unit.index]?.level ?? 1;
       const N = nextLevel;
-      const open = mine.shafts.length;
-      const fNow = eco.elevatorRealFlow(L, open, scale);
-      const fNext = N !== null ? eco.elevatorRealFlow(N, open, scale) : null;
+      const open = zoneView(cfg, mine, unit.index).deepestStop;
+      const zoneScale = scale * eco.elevatorZoneFlowScale(unit.index);
+      const fNow = eco.elevatorRealFlow(L, open, zoneScale);
+      const fNext = N !== null ? eco.elevatorRealFlow(N, open, zoneScale) : null;
       row(
         'stat.flow',
         fmt.rate(fNow),
@@ -76,8 +78,8 @@ export function unitStats(
       );
       row(
         'stat.capacity',
-        fmt.num(eco.elevatorCapacity(L, scale)),
-        N !== null ? fmt.num(eco.elevatorCapacity(N, scale)) : null,
+        fmt.num(eco.elevatorCapacity(L, zoneScale)),
+        N !== null ? fmt.num(eco.elevatorCapacity(N, zoneScale)) : null,
       );
       row(
         'stat.trip',

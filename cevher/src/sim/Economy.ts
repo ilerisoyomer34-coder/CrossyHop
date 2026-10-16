@@ -116,12 +116,17 @@ export class Economy {
     return this.bulkCost(this.shaftCostCurve(n, scale), level, 1);
   }
 
-  /** U(n) = unlockBase × unlockGrowth^(n−2) × scale, for n ≥ 2. */
+  /**
+   * U(n) = unlockBase × unlockGrowth^(n−2) × scale for n ≥ 2, with the gentler `deepUnlock.growth`
+   * per shaft past `deepUnlock.fromShaft` (GDD 5.2 values up to there).
+   */
   shaftUnlockCost(n: number, scale = 1): Decimal {
     if (n < 2) return ZERO;
     const s = this.cfg.shaft;
+    const from = s.deepUnlock.fromShaft;
     return D(s.unlockGrowth)
-      .pow(n - 2)
+      .pow(Math.min(n, from) - 2)
+      .mul(D(s.deepUnlock.growth).pow(Math.max(0, n - from)))
       .mul(s.unlockBase * scale);
   }
 
@@ -142,13 +147,43 @@ export class Economy {
 
   // ---------------------------------------------------------------- elevator
 
+  /**
+   * Transport milestone factor: `mult`^(milestones up to the deep level) × `deep.mult`^(milestones
+   * past it).
+   */
+  transportMilestoneMultiplier(
+    level: number,
+    every: number,
+    mult: number,
+    deep: { fromLevel: number; mult: number },
+  ): Decimal {
+    const m = Math.floor(level / every);
+    const m0 = Math.floor(deep.fromLevel / every);
+    return D(mult)
+      .pow(Math.min(m, m0))
+      .mul(D(deep.mult).pow(Math.max(0, m - m0)));
+  }
+
   /** A(L) = baseFlow × L × 3^floor(L/25) × scale — nominal flow at the reference depth, ₵/s. */
   elevatorNominalFlow(level: number, scale = 1): Decimal {
     const e = this.cfg.elevator;
     if (level <= 0) return ZERO;
-    return D(e.milestoneMult)
-      .pow(Math.floor(level / e.milestoneEvery))
-      .mul(e.baseFlow * level * scale);
+    return this.transportMilestoneMultiplier(
+      level,
+      e.milestoneEvery,
+      e.milestoneMult,
+      e.deepMilestone,
+    ).mul(e.baseFlow * level * scale);
+  }
+
+  /** Flow scale of the elevator serving zone `zone` (0 = the surface elevator). */
+  elevatorZoneFlowScale(zone: number): number {
+    return this.cfg.elevator.zoneFlowMult ** zone;
+  }
+
+  /** Cost scale of the elevator serving zone `zone`. */
+  elevatorZoneCostScale(zone: number): number {
+    return this.cfg.elevator.zoneCostMult ** zone;
   }
 
   /** Kap(L) = A(L) × 10 s — ore carried per trip. */
@@ -201,9 +236,9 @@ export class Economy {
     return this.elevatorUnloadMs() + this.cfg.elevator.fullLoadSec * MS + travel;
   }
 
-  /** Real elevator flow = capacity / full trip time at the current depth, ₵/s. */
-  elevatorRealFlow(level: number, openShafts: number, scale = 1): Decimal {
-    const tripSec = this.elevatorTripMs(Math.max(1, openShafts), level) / MS;
+  /** Real elevator flow = capacity / full trip time with `stops` stops below the dock, ₵/s. */
+  elevatorRealFlow(level: number, stops: number, scale = 1): Decimal {
+    const tripSec = this.elevatorTripMs(Math.max(1, stops), level) / MS;
     return this.elevatorCapacity(level, scale).div(tripSec);
   }
 
@@ -222,9 +257,12 @@ export class Economy {
   logisticsFlow(level: number, scale = 1): Decimal {
     const l = this.cfg.logistics;
     if (level <= 0) return ZERO;
-    return D(l.milestoneMult)
-      .pow(Math.floor(level / l.milestoneEvery))
-      .mul(l.baseFlow * level * scale);
+    return this.transportMilestoneMultiplier(
+      level,
+      l.milestoneEvery,
+      l.milestoneMult,
+      l.deepMilestone,
+    ).mul(l.baseFlow * level * scale);
   }
 
   logisticsCostCurve(scale = 1): CostCurve {

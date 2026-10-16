@@ -5,7 +5,16 @@ import { idleCarrier, newShaft } from '../src/state/factory';
 import type { GameState } from '../src/state/GameState';
 import { chainFlows, quoteUnlock } from '../src/state/selectors';
 import { runSimulation, stepSimulation } from '../src/sim/Simulation';
-import { cfg, deepFreeze, expectClose, freshState, MINE, mine, patchMine } from './helpers';
+import {
+  MINE,
+  cfg,
+  deepFreeze,
+  elevatorOf,
+  expectClose,
+  freshState,
+  mine,
+  patchMine,
+} from './helpers';
 
 const eco = cfg.economy;
 
@@ -15,7 +24,7 @@ function automatedMine(shaftLevels: number[], elevator: number, logistics: numbe
   state = patchMine(state, (m) => ({
     ...m,
     shafts: shaftLevels.map((level) => ({ ...newShaft(), level })),
-    elevator: { ...m.elevator, level: elevator },
+    elevators: [{ ...elevatorOf(m), level: elevator }, ...m.elevators.slice(1)],
     logistics: {
       level: logistics,
       carriers: Array.from({ length: eco.carrierCount(logistics) }, () => idleCarrier(0)),
@@ -72,7 +81,7 @@ describe('manual operation', () => {
     const again = tapUnit(tapped.state, MINE, { kind: 'shaft', index: 0 }, cfg);
     expect(again.ok ? 'ok' : again.reason).toBe('busy');
     const auto = debugSetAutoRun(freshState(), true).state;
-    const r = tapUnit(auto, MINE, { kind: 'elevator' }, cfg);
+    const r = tapUnit(auto, MINE, { kind: 'elevator', index: 0 }, cfg);
     expect(r.ok ? 'ok' : r.reason).toBe('automated');
   });
 
@@ -82,7 +91,7 @@ describe('manual operation', () => {
       ...m,
       shafts: Array.from({ length: 5 }, () => ({ ...newShaft(), stored: D('1e30') })),
     }));
-    state = tapUnit(state, MINE, { kind: 'elevator' }, cfg).state;
+    state = tapUnit(state, MINE, { kind: 'elevator', index: 0 }, cfg).state;
     const capacity = eco.elevatorCapacity(1);
     let unloadedAt: number | null = null;
     for (let i = 0; i < 2000 && unloadedAt === null; i++) {
@@ -118,7 +127,7 @@ describe('manual operation', () => {
     let state = freshState();
     state = tapUnit(state, MINE, { kind: 'shaft', index: 0 }, cfg).state;
     state = runSimulation(state, eco.shaftCycleMs(), 50, cfg).state;
-    state = tapUnit(state, MINE, { kind: 'elevator' }, cfg).state;
+    state = tapUnit(state, MINE, { kind: 'elevator', index: 0 }, cfg).state;
     state = runSimulation(state, eco.elevatorTripMs(1, 1), 50, cfg).state;
     expect(mine(state).surfaceStock.gt(0)).toBe(true);
     state = tapUnit(state, MINE, { kind: 'logistics' }, cfg).state;

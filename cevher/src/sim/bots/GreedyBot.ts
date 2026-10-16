@@ -27,6 +27,7 @@ import type { GameEvent } from '../../state/events';
 import { chainFlows, mineScale, quoteUnlock, unitAutomated } from '../../state/selectors';
 import { getMine } from '../../state/update';
 import type { GameConfig } from '../GameConfig';
+import { zoneView } from '../zones';
 
 export type BotPlan =
   | { kind: 'levels'; unit: UnitRef; count: number; cost: Decimal; reason: 'transport' | 'payback' }
@@ -46,17 +47,18 @@ export function planGreedy(state: GameState, mineId: string, cfg: GameConfig): B
   const scale = mineScale(cfg, mineId);
   const flows = chainFlows(state, mineId, cfg);
 
-  // 1. Transport maintenance.
-  const elevatorShort =
-    flows.elevator.lt(flows.shafts) && mine.elevator.level < cfg.econ.elevator.maxLevel;
+  // 1. Transport maintenance (the elevator to raise is the one limiting the relay).
+  const weakest = flows.weakestElevator;
+  const weakLevel = mine.elevators[weakest]?.level ?? cfg.econ.elevator.maxLevel;
+  const elevatorShort = flows.elevator.lt(flows.shafts) && weakLevel < cfg.econ.elevator.maxLevel;
   const logisticsShort =
     flows.logistics.lt(flows.shafts) && mine.logistics.level < cfg.econ.logistics.maxLevel;
   if (elevatorShort && (!logisticsShort || flows.elevator.lte(flows.logistics))) {
     return {
       kind: 'levels',
-      unit: { kind: 'elevator' },
+      unit: { kind: 'elevator', index: weakest },
       count: 1,
-      cost: eco.elevatorUpgradeCost(mine.elevator.level, scale),
+      cost: eco.elevatorUpgradeCost(weakLevel, scale * eco.elevatorZoneCostScale(weakest)),
       reason: 'transport',
     };
   }
@@ -173,10 +175,16 @@ export function greedyBotTick(
         apply(tapUnit(current, mineId, { kind: 'shaft', index: i }, cfg));
       }
     });
-    const anyOre = mine.shafts.some((s) => s.stored.gt(0));
-    if (anyOre && mine.elevator.phase.kind === 'idle') {
-      apply(tapUnit(current, mineId, { kind: 'elevator' }, cfg));
-    }
+    // Tap every idle elevator whose zone (or the station below it) holds ore.
+    mine.elevators.forEach((elevator, z) => {
+      if (elevator.phase.kind !== 'idle') return;
+      const latest = getMine(current, mineId);
+      const view = zoneView(cfg, latest, z);
+      const zoneOre =
+        latest.shafts.slice(view.first, view.first + view.count).some((s) => s.stored.gt(0)) ||
+        (view.hasStationBelow && (latest.stations[z]?.gt(0) ?? false));
+      if (zoneOre) apply(tapUnit(current, mineId, { kind: 'elevator', index: z }, cfg));
+    });
     const allIdle = mine.logistics.carriers.every((c) => c.phase.kind === 'idle');
     if (allIdle && mine.surfaceStock.gt(0))
       apply(tapUnit(current, mineId, { kind: 'logistics' }, cfg));

@@ -12,6 +12,14 @@ export interface WorldLayout {
   /** Logical world width. */
   width: number;
   shaftCount: number;
+  /** Shafts per elevator zone; a transfer station row sits between two zones. */
+  zoneSize: number;
+  /** Elevators (zones) the open shafts need; stations = elevatorCount − 1. */
+  elevatorCount: number;
+  stationHeight: number;
+  /** Station geometry (relative to the station's top): upper landing and lower dock floors. */
+  stationUpperFloor: number;
+  stationLowerFloor: number;
   surfaceHeight: number;
   groundY: number;
   rowHeight: number;
@@ -47,6 +55,7 @@ export function computeLayout(
   viewWidth: number,
   viewHeight: number,
   shaftCount: number,
+  zoneSize: number,
 ): WorldLayout {
   const scale = Math.min(MAX_SCALE, Math.max(1, viewWidth / DESIGN_WIDTH));
   const width = Math.max(320, viewWidth / scale);
@@ -59,17 +68,29 @@ export function computeLayout(
   const crateX = columnX + columnWidth + 10;
   const crateWidth = 48;
   const warehouseWidth = Math.min(120, Math.max(96, width * 0.25));
+  const elevatorCount = Math.max(1, Math.ceil(shaftCount / zoneSize));
+  const stationHeight = 132;
   return {
     viewWidth,
     viewHeight,
     scale,
     width,
     shaftCount,
+    zoneSize,
+    elevatorCount,
+    stationHeight,
+    stationUpperFloor: 62,
+    stationLowerFloor: 128,
     surfaceHeight,
     groundY,
     rowHeight,
     bottomRowHeight,
-    worldHeight: surfaceHeight + shaftCount * rowHeight + bottomRowHeight + 60,
+    worldHeight:
+      surfaceHeight +
+      shaftCount * rowHeight +
+      (elevatorCount - 1) * stationHeight +
+      bottomRowHeight +
+      60,
     columnX,
     columnWidth,
     cageWidth: 50,
@@ -91,9 +112,19 @@ export function computeLayout(
   };
 }
 
-/** Logical y of the top of shaft row `index` (0-based). */
+/** Logical y of the top of shaft row `index` (0-based); station rows sit between zones. */
 export function rowTop(layout: WorldLayout, index: number): number {
-  return layout.surfaceHeight + index * layout.rowHeight;
+  const stationsAbove = Math.floor(index / layout.zoneSize);
+  return layout.surfaceHeight + index * layout.rowHeight + stationsAbove * layout.stationHeight;
+}
+
+/** Logical y of the top of transfer station `station` (between zone s and zone s+1). */
+export function stationTop(layout: WorldLayout, station: number): number {
+  return (
+    layout.surfaceHeight +
+    (station + 1) * layout.zoneSize * layout.rowHeight +
+    station * layout.stationHeight
+  );
 }
 
 /** Logical y of the floor of shaft row `index`. */
@@ -102,12 +133,32 @@ export function rowFloor(layout: WorldLayout, index: number): number {
 }
 
 export function bottomRowTop(layout: WorldLayout): number {
-  return layout.surfaceHeight + layout.shaftCount * layout.rowHeight;
+  return (
+    layout.surfaceHeight +
+    layout.shaftCount * layout.rowHeight +
+    (layout.elevatorCount - 1) * layout.stationHeight
+  );
 }
 
-/** Logical y of the cage's bottom edge when parked at elevator stop `stop` (0 = surface dock). */
-export function elevatorStopY(layout: WorldLayout, stop: number): number {
-  return stop <= 0 ? layout.groundY : rowFloor(layout, stop - 1);
+/** Logical y where the cable of the elevator of `zone` hangs from (headframe or station winch). */
+export function elevatorCableTop(layout: WorldLayout, zone: number): number {
+  return zone === 0
+    ? layout.headframeTop + 8
+    : stationTop(layout, zone - 1) + layout.stationUpperFloor + 6;
+}
+
+/**
+ * Logical y of the cage's bottom edge when the elevator of `zone` is parked at `stop`
+ * (0 = its dock, 1…n = the zone's shafts, n + 1 = the station below; see sim/zones.ts).
+ */
+export function elevatorStopY(layout: WorldLayout, zone: number, stop: number): number {
+  if (stop <= 0) {
+    return zone === 0 ? layout.groundY : stationTop(layout, zone - 1) + layout.stationLowerFloor;
+  }
+  const first = zone * layout.zoneSize;
+  const shaftsInZone = Math.min(layout.zoneSize, layout.shaftCount - first);
+  if (stop > shaftsInZone) return stationTop(layout, zone) + layout.stationUpperFloor;
+  return rowFloor(layout, first + stop - 1);
 }
 
 /** Maximum scroll offset in CSS pixels. */

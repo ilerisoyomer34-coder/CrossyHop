@@ -27,11 +27,26 @@ export interface ShaftConfig {
   costGrowthPerLevel: number;
   unlockBase: number;
   unlockGrowth: number;
+  /**
+   * Gentler unlock-cost growth past `fromShaft` (the deep floors): U(n) grows by `growth` per shaft
+   * after it instead of `unlockGrowth`, so the deep mine stays reachable in hours, not weeks.
+   */
+  deepUnlock: { fromShaft: number; growth: number };
   milestoneEvery: number;
   milestoneMult: number;
   maxLevel: number;
   minerThresholds: number[];
   cycle: ShaftCycleConfig;
+}
+
+/**
+ * Transport milestones past `fromLevel` multiply by `mult` instead of the normal milestone
+ * multiplier. Deep floors need very high transport levels; without this the transport cost would
+ * grow much faster than income there.
+ */
+export interface DeepMilestoneConfig {
+  fromLevel: number;
+  mult: number;
 }
 
 export interface ElevatorConfig {
@@ -40,6 +55,13 @@ export interface ElevatorConfig {
   costGrowthPerLevel: number;
   milestoneEvery: number;
   milestoneMult: number;
+  deepMilestone: DeepMilestoneConfig;
+  /** Shafts served by one elevator; deeper zones get their own elevator and a transfer station. */
+  zoneSize: number;
+  /** Flow scale of the elevator of zone z: zoneFlowMult^z (deeper ore is worth more). */
+  zoneFlowMult: number;
+  /** Cost scale of the elevator of zone z: zoneCostMult^z. */
+  zoneCostMult: number;
   speedBonusEvery: number;
   speedBonus: number;
   tripBaseSec: number;
@@ -70,6 +92,7 @@ export interface LogisticsConfig {
   costGrowthPerLevel: number;
   milestoneEvery: number;
   milestoneMult: number;
+  deepMilestone: DeepMilestoneConfig;
   maxLevel: number;
   carrierThresholds: number[];
   cycle: LogisticsCycleConfig;
@@ -269,6 +292,8 @@ export function validateEconomy(cfg: EconomyConfig): void {
   assertGrowth(s.costGrowthPerLevel, 'shaft.costGrowthPerLevel');
   assertPositive(s.unlockBase, 'shaft.unlockBase');
   assertGrowth(s.unlockGrowth, 'shaft.unlockGrowth');
+  assertPositive(s.deepUnlock.fromShaft, 'shaft.deepUnlock.fromShaft');
+  assertGrowth(s.deepUnlock.growth, 'shaft.deepUnlock.growth');
   assertPositive(s.milestoneEvery, 'shaft.milestoneEvery');
   assertPositive(s.milestoneMult, 'shaft.milestoneMult');
   assertPositive(s.maxLevel, 'shaft.maxLevel');
@@ -285,6 +310,13 @@ export function validateEconomy(cfg: EconomyConfig): void {
   assertGrowth(e.costGrowthPerLevel, 'elevator.costGrowthPerLevel');
   assertPositive(e.milestoneEvery, 'elevator.milestoneEvery');
   assertPositive(e.milestoneMult, 'elevator.milestoneMult');
+  assertPositive(e.deepMilestone.fromLevel, 'elevator.deepMilestone.fromLevel');
+  assertPositive(e.deepMilestone.mult, 'elevator.deepMilestone.mult');
+  if (!Number.isInteger(e.zoneSize) || e.zoneSize < 1) {
+    throw new ConfigError('elevator.zoneSize must be a positive integer');
+  }
+  assertPositive(e.zoneFlowMult, 'elevator.zoneFlowMult');
+  assertPositive(e.zoneCostMult, 'elevator.zoneCostMult');
   assertPositive(e.speedBonusEvery, 'elevator.speedBonusEvery');
   assertNonNegative(e.speedBonus, 'elevator.speedBonus');
   assertPositive(e.referenceDepth, 'elevator.referenceDepth');
@@ -304,6 +336,8 @@ export function validateEconomy(cfg: EconomyConfig): void {
   assertGrowth(l.costGrowthPerLevel, 'logistics.costGrowthPerLevel');
   assertPositive(l.milestoneEvery, 'logistics.milestoneEvery');
   assertPositive(l.milestoneMult, 'logistics.milestoneMult');
+  assertPositive(l.deepMilestone.fromLevel, 'logistics.deepMilestone.fromLevel');
+  assertPositive(l.deepMilestone.mult, 'logistics.deepMilestone.mult');
   assertPositive(l.maxLevel, 'logistics.maxLevel');
   assertAscending(l.carrierThresholds, 'logistics.carrierThresholds');
   if (l.carrierThresholds[0] !== 1)

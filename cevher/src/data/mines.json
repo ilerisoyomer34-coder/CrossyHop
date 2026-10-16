@@ -5,11 +5,56 @@
       "id": "yesil-yamac-1",
       "regionId": "yesil-yamac",
       "mineScale": 1,
-      "shaftCount": 10,
+      "shaftCount": 36,
       "oreBands": [
-        { "fromShaft": 1, "ore": "coal" },
-        { "fromShaft": 4, "ore": "copper" },
-        { "fromShaft": 7, "ore": "iron" }
+        {
+          "fromShaft": 1,
+          "ore": "coal"
+        },
+        {
+          "fromShaft": 4,
+          "ore": "copper"
+        },
+        {
+          "fromShaft": 7,
+          "ore": "iron"
+        },
+        {
+          "fromShaft": 11,
+          "ore": "gold"
+        },
+        {
+          "fromShaft": 14,
+          "ore": "diamond"
+        },
+        {
+          "fromShaft": 18,
+          "ore": "ruby"
+        },
+        {
+          "fromShaft": 21,
+          "ore": "emerald"
+        },
+        {
+          "fromShaft": 24,
+          "ore": "sapphire"
+        },
+        {
+          "fromShaft": 27,
+          "ore": "opal"
+        },
+        {
+          "fromShaft": 30,
+          "ore": "blackOpal"
+        },
+        {
+          "fromShaft": 33,
+          "ore": "fireStone"
+        },
+        {
+          "fromShaft": 36,
+          "ore": "magma"
+        }
       ]
     }
   ]

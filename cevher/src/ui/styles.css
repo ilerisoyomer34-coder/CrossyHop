@@ -512,8 +512,9 @@ h3 {
 }
 .row-info__title {
   display: inline-flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: 2px 6px;
   font-size: 17px;
   font-weight: 900;
   white-space: nowrap;
@@ -529,9 +530,9 @@ h3 {
 
 .ore-chip {
   display: inline-block;
-  padding: 1px 7px;
+  padding: 1px 6px;
   border-radius: 999px;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 800;
   text-shadow: none;
   border: 1.5px solid rgba(0, 0, 0, 0.45);
@@ -547,6 +548,42 @@ h3 {
 .ore-chip--iron {
   background: #8a6656;
   color: #f7ebe3;
+}
+.ore-chip--gold {
+  background: #c9971f;
+  color: #fff8dc;
+}
+.ore-chip--diamond {
+  background: #8fd3e6;
+  color: #0e3440;
+}
+.ore-chip--ruby {
+  background: #a3122f;
+  color: #ffe3ea;
+}
+.ore-chip--emerald {
+  background: #178049;
+  color: #e6fff1;
+}
+.ore-chip--sapphire {
+  background: #1d45a0;
+  color: #e3ebff;
+}
+.ore-chip--opal {
+  background: linear-gradient(90deg, #d8f3f0, #f6d6ef, #d6e4fb);
+  color: #3a3150;
+}
+.ore-chip--blackOpal {
+  background: linear-gradient(90deg, #1c1830, #2b1d55, #123f4a);
+  color: #9ff5e4;
+}
+.ore-chip--fireStone {
+  background: #c2410c;
+  color: #fff0d6;
+}
+.ore-chip--magma {
+  background: linear-gradient(90deg, #ff7a00, #d4170c);
+  color: #fff4d6;
 }
 .auto-badge {
   display: inline-grid;

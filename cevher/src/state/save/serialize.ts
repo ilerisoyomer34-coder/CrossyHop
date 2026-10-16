@@ -26,6 +26,7 @@ import {
   type ShaftState,
 } from '../GameState';
 import type { GameConfig } from '../../sim/GameConfig';
+import { zoneCount, zoneSize } from '../../sim/zones';
 import { SaveError } from './SaveError';
 import type { SaveData } from './migrations';
 
@@ -68,12 +69,13 @@ function encodeMine(mine: MineState): SaveData {
       autoUntil: s.autoUntil,
       manualCycleEndsAt: s.manualCycleEndsAt,
     })),
-    elevator: {
-      level: mine.elevator.level,
-      managerId: mine.elevator.managerId,
-      load: dec(mine.elevator.load),
-      phase: { ...mine.elevator.phase, endAt: endTime(mine.elevator.phase.endAt) },
-    },
+    elevators: mine.elevators.map((e) => ({
+      level: e.level,
+      managerId: e.managerId,
+      load: dec(e.load),
+      phase: { ...e.phase, endAt: endTime(e.phase.endAt) },
+    })),
+    stations: mine.stations.map(dec),
     logistics: {
       level: mine.logistics.level,
       managerId: mine.logistics.managerId,
@@ -189,13 +191,14 @@ class Reader {
 
   /** Non-negative Decimal stored as a string. */
   dec(key: string): Decimal {
+    return parseAmount(this.data[key], this.at(key));
+  }
+
+  /** Array of non-negative Decimals stored as strings. */
+  decs(key: string): Decimal[] {
     const v = this.data[key];
-    if (typeof v !== 'string') fail(this.at(key), 'expected a number string');
-    const d = new Decimal(v);
-    if (!Number.isFinite(d.mantissa) || !Number.isFinite(d.exponent) || d.lt(0)) {
-      fail(this.at(key), `invalid amount "${v}"`);
-    }
-    return d;
+    if (!Array.isArray(v)) fail(this.at(key), 'expected an array');
+    return v.map((x, i) => parseAmount(x, `${this.at(key)}[${i}]`));
   }
 
   obj(key: string): Reader {
@@ -236,6 +239,15 @@ class Reader {
   }
 }
 
+function parseAmount(v: unknown, path: string): Decimal {
+  if (typeof v !== 'string') fail(path, 'expected a number string');
+  const d = new Decimal(v);
+  if (!Number.isFinite(d.mantissa) || !Number.isFinite(d.exponent) || d.lt(0)) {
+    fail(path, `invalid amount "${v}"`);
+  }
+  return d;
+}
+
 const isFiniteNumber = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
 const isBoolean = (v: unknown): v is boolean => typeof v === 'boolean';
 
@@ -254,7 +266,8 @@ function decodeShaft(r: Reader, cfg: GameConfig): ShaftState {
   return withManager(shaft, r.optStr('managerId'));
 }
 
-function decodeElevator(r: Reader, cfg: GameConfig, shaftCount: number): ElevatorState {
+/** `deepestStop` bounds the phase stops (see sim/zones.ts). */
+function decodeElevator(r: Reader, cfg: GameConfig, deepestStop: number): ElevatorState {
   const p = r.obj('phase');
   const elevator: ElevatorState = {
     level: r.int('level', 1, cfg.econ.elevator.maxLevel),
@@ -263,8 +276,8 @@ function decodeElevator(r: Reader, cfg: GameConfig, shaftCount: number): Elevato
       kind: p.oneOf('kind', ELEVATOR_PHASES),
       startAt: p.num('startAt'),
       endAt: p.endTime('endAt'),
-      from: p.int('from', 0, shaftCount),
-      to: p.int('to', 0, shaftCount),
+      from: p.int('from', 0, deepestStop),
+      to: p.int('to', 0, deepestStop),
     },
   };
   return withManager(elevator, r.optStr('managerId'));
@@ -313,13 +326,26 @@ function decodeMine(id: string, r: Reader, cfg: GameConfig): MineState {
   if (shafts.length < 1 || shafts.length > def.shaftCount) {
     fail(`${r.path}.shafts`, `expected 1..${def.shaftCount} shafts`);
   }
+  // One elevator per zone and a station between every two zones.
+  const zones = zoneCount(cfg, shafts.length);
+  const size = zoneSize(cfg);
+  const elevators = r.list('elevators', (e) => e);
+  if (elevators.length !== zones) {
+    fail(`${r.path}.elevators`, `expected ${zones} elevators for ${shafts.length} shafts`);
+  }
+  const stations = r.decs('stations');
+  if (stations.length !== zones - 1) fail(`${r.path}.stations`, `expected ${zones - 1} stations`);
   return {
     id,
     cash: r.dec('cash'),
     earnedThisRun: r.dec('earnedThisRun'),
     rank: r.int('rank', 0),
     shafts,
-    elevator: decodeElevator(r.obj('elevator'), cfg, shafts.length),
+    elevators: elevators.map((e, z) => {
+      const count = Math.min(size, shafts.length - z * size);
+      return decodeElevator(e, cfg, count + (z < zones - 1 ? 1 : 0));
+    }),
+    stations,
     logistics: decodeLogistics(r.obj('logistics'), cfg),
     surfaceStock: r.dec('surfaceStock'),
     barrier: decodeBarrier(r.objOrNull('barrier')),

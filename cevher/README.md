@@ -6,7 +6,8 @@ taşıma zincirini optimize ederek Anadolu dağlarından Ay'a uzanan bir maden i
 
 > **Durum: Faz 0 — Gri kutu prototip + kayıt sistemi (Faz 1'den öne alındı).** Tasarım dokümanı:
 > [`docs/GDD.md`](docs/GDD.md) · Raporlar: [`faz-0.md`](docs/reports/faz-0.md),
-> [`faz-1-kayit.md`](docs/reports/faz-1-kayit.md), [`oynanis-modu.md`](docs/reports/oynanis-modu.md)
+> [`faz-1-kayit.md`](docs/reports/faz-1-kayit.md), [`oynanis-modu.md`](docs/reports/oynanis-modu.md),
+> [`derin-maden.md`](docs/reports/derin-maden.md)
 
 ## Hemen oyna
 
@@ -29,16 +30,25 @@ npm run dev          # http://localhost:5173 — telefonda denemek için: npm ru
 Telefonda denemek için bilgisayar ile telefon aynı ağdayken `npm run dev -- --host` komutunun
 yazdığı `Network:` adresini telefon tarayıcısında açın.
 
-## Nasıl oynanır (Faz 0)
+## Nasıl oynanır
 
 1. **Kat 1**'deki tünele dokun → madenciler kazar, cevher kasaya dolar.
 2. Sol üstteki **kuyu kulesine** dokun → asansör en derin kata iner, yukarı çıkarken kasaları boşaltır,
    cevheri kuyu ağzı deposuna döker.
 3. **Rayların** altındaki "Dokun"a bas → taşıyıcılar vagonu ambara iter, cevher anında satılır.
-4. Nakitle katları, asansörü ve lojistiği **yükselt**, yeni katlar aç. Kat 5'ten sonra **kaya engelini**
-   patlat (1 dk, bedava).
+4. Nakitle katları, asansörü ve lojistiği **yükselt**, yeni katlar aç. Her 5 katta bir **kaya engelini**
+   patlat (Kat 5: 1 dk ve bedava; Kat 10: 15 dk; Kat 15: 1 sa; Kat 20 ve sonrası: 2 sa). Patlatma oyun
+   kapalıyken de sürer.
 5. Üstteki **üretim zinciri** en yavaş halkayı (Darboğaz) gösterir; ona dokununca ilgili birime gidip
    yükseltme panelini açar.
+
+**Derin maden (36 kat):** Kömür (1–3) → Bakır (4–6) → Demir (7–10) → Altın (11–13) → Elmas (14–17) →
+Yakut (18–20) → Zümrüt (21–23) → Safir (24–26) → Opal (27–29) → Siyah opal (30–32) → Ateş taşı (33–35)
+→ en dipte **Magma Çekirdeği** (Kat 36). Her 10 katta bir yeni asansör kurulur: Kat 11'i açınca
+**Asansör 2**, Kat 21'de **Asansör 3**, Kat 31'de **Asansör 4**. Derindeki asansör cevheri bir üstteki
+**aktarma istasyonuna** bırakır, üstteki asansör oradan alıp yukarı taşır. Her asansör ayrı yükseltilir;
+darboğaz zinciri hangisinin yavaşlattığını gösterir ("Asansör 2" gibi). Sürekli açık oynayan biri
+dibe yaklaşık 3 saatte iner (kaya engeli beklemeleri hariç).
 
 **Oynanış modu (Ayarlar ⚙ › Oynanış):** Yeni oyun **Dokunmalı** başlar: yukarıdaki adımlarda her birime
 sen dokunursun. **Otomatik** seçilince katlar, asansör ve taşıyıcılar hiç dokunmadan kendi kendine çalışır
@@ -65,16 +75,16 @@ bağlıdır: tarayıcı verilerini silmek kaydı da siler (önce dışa aktarın
 
 ## Komutlar
 
-| Komut                                                   | Ne yapar                                                                                                               |
-| ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `npm run dev`                                           | Geliştirme sunucusu (hata ayıklama paneli açık)                                                                        |
-| `npm run build`                                         | Tip denetimi + üretim derlemesi (`dist/`)                                                                              |
-| `npm run preview`                                       | Üretim derlemesini yerelde sunar                                                                                       |
-| `npm test`                                              | Vitest birim testleri (ekonomi, toplu alım, biçimlendirme, simülasyon, bot, döngü, kayıt, çevrimdışı)                  |
-| `npm run test:e2e`                                      | Playwright uçtan uca testler (mobil 390×844 + masaüstü 1440×900)                                                       |
-| `npm run lint` · `npm run typecheck` · `npm run format` | Kod kalitesi                                                                                                           |
-| `npm run check`                                         | typecheck + lint + test                                                                                                |
-| `npm run sim`                                           | Denge simülatörü: açgözlü bot Kat 10'a kadar oynar, GDD 5.5 eğrisiyle karşılaştırır (`-- --mode=auto`, `-- --until=8`) |
+| Komut                                                   | Ne yapar                                                                                                          |
+| ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `npm run dev`                                           | Geliştirme sunucusu (hata ayıklama paneli açık)                                                                   |
+| `npm run build`                                         | Tip denetimi + üretim derlemesi (`dist/`)                                                                         |
+| `npm run preview`                                       | Üretim derlemesini yerelde sunar                                                                                  |
+| `npm test`                                              | Vitest birim testleri (ekonomi, toplu alım, biçimlendirme, simülasyon, bot, döngü, kayıt, çevrimdışı)             |
+| `npm run test:e2e`                                      | Playwright uçtan uca testler (mobil 390×844 + masaüstü 1440×900)                                                  |
+| `npm run lint` · `npm run typecheck` · `npm run format` | Kod kalitesi                                                                                                      |
+| `npm run check`                                         | typecheck + lint + test                                                                                           |
+| `npm run sim`                                           | Denge simülatörü: açgözlü bot oynar, hedef eğriyle karşılaştırır (`-- --mode=auto`, `-- --until=36 --barriers=0`) |
 
 İlk kez e2e çalıştırıyorsanız tarayıcıyı indirin: `npx playwright install chromium`.
 
@@ -99,7 +109,8 @@ src/
   state/     GameState (değişmez model), actions (saf eylemler), selectors, events, factory
     save/    SaveManager (zarf + yedekler), serialize (Decimal ⇄ metin, doğrulama), migrations,
              checksum (FNV-1a), AutoSave
-  sim/       Economy (formüller), Shaft/Elevator/Logistics/Barrier sistemleri, Simulation,
+  sim/       Economy (formüller), Shaft/Elevator/Logistics/Barrier sistemleri, zones (asansör
+             bölgeleri ve aktarma), Simulation,
              OfflineCalculator (analitik çevrimdışı ilerleme), bots/
   render/    Pixi sahnesi: MineScene, Surface/Shaft/Elevator/Logistics/Bottom view, kamera, yer tutucu sanat
   ui/        Preact arayüzü: HUD, darboğaz zinciri, dünya katmanı, yükseltme paneli, ayarlar

@@ -9,7 +9,7 @@ import {
   unlockNextShaft,
 } from '../src/state/actions';
 import { quoteUpgrade } from '../src/state/selectors';
-import { cfg, expectClose, freshState, MINE, mine, patchMine } from './helpers';
+import { MINE, cfg, elevatorOf, expectClose, freshState, mine, patchMine } from './helpers';
 
 const eco = cfg.economy;
 const rich = () => patchMine(freshState(), (m) => ({ ...m, cash: D('1e12') }));
@@ -70,7 +70,7 @@ describe('buy modes', () => {
   });
 
   it('MAKS shows the price of one level when nothing is affordable', () => {
-    const q = quoteUpgrade(freshState(), MINE, { kind: 'elevator' }, 'max', cfg);
+    const q = quoteUpgrade(freshState(), MINE, { kind: 'elevator', index: 0 }, 'max', cfg);
     expect(q.count).toBe(1);
     expect(q.affordable).toBe(false);
     expectClose(q.cost, 25);
@@ -85,9 +85,12 @@ describe('buy modes', () => {
   });
 
   it('next-milestone mode stops exactly at the milestone', () => {
-    const state = patchMine(rich(), (m) => ({ ...m, elevator: { ...m.elevator, level: 30 } }));
-    const r = buyWithMode(state, MINE, { kind: 'elevator' }, 'milestone', cfg);
-    expect(mine(r.state).elevator.level).toBe(50);
+    const state = patchMine(rich(), (m) => ({
+      ...m,
+      elevators: [{ ...elevatorOf(m), level: 30 }, ...m.elevators.slice(1)],
+    }));
+    const r = buyWithMode(state, MINE, { kind: 'elevator', index: 0 }, 'milestone', cfg);
+    expect(elevatorOf(mine(r.state)).level).toBe(50);
   });
 });
 

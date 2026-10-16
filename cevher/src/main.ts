@@ -14,7 +14,7 @@ import { setLocale, t } from './i18n/t';
 import { vibrate } from './platform/haptics';
 import { createBrowserStore } from './platform/storage';
 import { ScrollCamera } from './render/camera/ScrollCamera';
-import { computeLayout, maxScroll, rowTop } from './render/layout';
+import { computeLayout, maxScroll, rowTop, stationTop } from './render/layout';
 import { MineScene } from './render/MineScene';
 import { createInitialState } from './state/factory';
 import type { GameState } from './state/GameState';
@@ -182,7 +182,12 @@ function boot(): void {
     const mine = state.mines[state.activeMineId];
     let layout = layoutSignal.peek();
     if (layout && mine && layout.shaftCount !== mine.shafts.length) {
-      layout = computeLayout(layout.viewWidth, layout.viewHeight, mine.shafts.length);
+      layout = computeLayout(
+        layout.viewWidth,
+        layout.viewHeight,
+        mine.shafts.length,
+        cfg.econ.elevator.zoneSize,
+      );
       layoutSignal.value = layout;
     }
     if (!layout) return;
@@ -225,7 +230,7 @@ function boot(): void {
       const width = mineView.clientWidth;
       const height = mineView.clientHeight;
       const shafts = game.state.mines[game.state.activeMineId]?.shafts.length ?? 1;
-      layoutSignal.value = computeLayout(width, height, shafts);
+      layoutSignal.value = computeLayout(width, height, shafts, cfg.econ.elevator.zoneSize);
       scene?.resize(width, height);
     };
     resize();
@@ -323,19 +328,35 @@ function wireFeedback(game: Game, getFloating: () => FloatingTexts | null): void
   game.bus.on('milestoneReached', (e) => {
     const layout = layoutSignal.peek();
     if (!layout) return;
+    const deepElevator = e.unit.kind === 'elevator' && e.unit.index > 0;
     const x =
       e.unit.kind === 'logistics'
         ? layout.width * 0.75
         : e.unit.kind === 'elevator'
-          ? layout.width * 0.25
+          ? deepElevator
+            ? layout.width * 0.5
+            : layout.width * 0.25
           : layout.width - 70;
-    const y = e.unit.kind === 'shaft' ? rowTop(layout, e.unit.index) + 24 : 70;
+    const y =
+      e.unit.kind === 'shaft'
+        ? rowTop(layout, e.unit.index) + 24
+        : e.unit.kind === 'elevator' && e.unit.index > 0
+          ? stationTop(layout, e.unit.index - 1) + layout.stationUpperFloor + 20
+          : 70;
     getFloating()?.spawn(t('fx.milestone', { mult: e.multiplier }), x, y, 'milestone');
     vibrate(25);
   });
 
-  game.bus.on('shaftUnlocked', (e) =>
-    showToast(t('fx.shaftUnlocked', { n: e.index + 1 }), 'success'),
+  game.bus.on('shaftUnlocked', (e) => {
+    const bottom = e.index + 1 >= (game.cfg.mines[e.mineId]?.shaftCount ?? Infinity);
+    showToast(
+      bottom ? t('fx.mineBottom') : t('fx.shaftUnlocked', { n: e.index + 1 }),
+      'success',
+      bottom ? 6000 : undefined,
+    );
+  });
+  game.bus.on('elevatorBuilt', (e) =>
+    showToast(t('fx.elevatorBuilt', { n: e.index + 1 }), 'success', 5000),
   );
   game.bus.on('barrierCleared', () => showToast(t('fx.barrierCleared'), 'success'));
   game.bus.on('depotEmpty', () => {
